@@ -15,7 +15,21 @@ const uid = () =>
     ? crypto.randomUUID()
     : `id-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 
-export const today = () => new Date().toISOString().slice(0, 10);
+/** Local YYYY-MM-DD (avoids UTC off-by-one near midnight). */
+const localISO = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+export const today = () => localISO(new Date());
+
+/** Monday-anchored start of the week containing `d`, as YYYY-MM-DD. */
+export const weekStart = (d = new Date()) => {
+  const date = new Date(d);
+  const dow = (date.getDay() + 6) % 7; // 0 = Monday
+  date.setDate(date.getDate() - dow);
+  return localISO(date);
+};
+
+export const isWeekend = (d = new Date()) => d.getDay() === 0 || d.getDay() === 6;
 
 /**
  * Data-access seam. The whole app depends on this interface, not on Dexie — so a
@@ -42,6 +56,8 @@ export interface Repository {
   saveReadiness(input: ReadinessInput): Promise<ReadinessCheck>;
   getReadiness(date: string): Promise<ReadinessCheck | undefined>;
   getLatestReadiness(): Promise<ReadinessCheck | undefined>;
+  /** The check-in for the current (Mon–Sun) week, if any. */
+  getWeeklyReadiness(): Promise<ReadinessCheck | undefined>;
 }
 
 class DexieRepository implements Repository {
@@ -147,6 +163,12 @@ class DexieRepository implements Repository {
 
   async getLatestReadiness() {
     return db.readinessChecks.orderBy("timestamp").last();
+  }
+
+  async getWeeklyReadiness() {
+    const start = weekStart();
+    const inWeek = await db.readinessChecks.where("date").aboveOrEqual(start).toArray();
+    return inWeek.sort((a, b) => b.timestamp - a.timestamp)[0];
   }
 }
 

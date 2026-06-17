@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { repo } from "@/lib/data/repository";
-import { useTodayReadiness } from "@/lib/data/hooks";
+import { useWeeklyReadiness } from "@/lib/data/hooks";
 import {
   READINESS_METRICS,
   scoreReadiness,
@@ -22,7 +22,7 @@ const DEFAULTS: ReadinessInput = {
 
 export default function ReadinessForm() {
   const router = useRouter();
-  const existing = useTodayReadiness();
+  const existing = useWeeklyReadiness();
   const [values, setValues] = useState<ReadinessInput>(DEFAULTS);
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -57,8 +57,11 @@ export default function ReadinessForm() {
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
-        <p className="eyebrow">Systems check</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">Readiness</h1>
+        <p className="eyebrow">Weekly · systems check</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">How was your week?</h1>
+        <p className="mt-2 text-[0.85rem] leading-snug text-muted">
+          Done on the weekend. Sets next week&apos;s volume — your coach adjusts the plan from this.
+        </p>
       </header>
 
       {/* Live score */}
@@ -110,7 +113,7 @@ export default function ReadinessForm() {
         disabled={saving}
         className="tap w-full rounded-xl bg-laser py-3.5 text-sm font-bold uppercase tracking-wider text-black transition active:scale-[0.98] disabled:opacity-60 glow-laser"
       >
-        {existing ? "Update check-in" : "Save check-in"}
+        {existing ? "Update this week" : "Save weekly check-in"}
       </button>
     </div>
   );

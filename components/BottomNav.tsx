@@ -38,6 +38,17 @@ const TABS: Tab[] = [
       </svg>
     ),
   },
+  {
+    href: "/method",
+    label: "Method",
+    match: (p) => p === "/method",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
+        <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15.5H5.5A1.5 1.5 0 0 0 4 21V5.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+        <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v15.5h5.5A1.5 1.5 0 0 1 20 21V5.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
 ];
 
 export default function BottomNav() {

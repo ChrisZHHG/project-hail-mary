@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
   // or served by any static host. (Remove `output: "export"` later if/when we add
   // Supabase API routes and deploy via a real Vercel build.)
   output: "export",
-  trailingSlash: true,
   images: { unoptimized: true },
   // Pin the workspace root so Next doesn't pick up a stray parent lockfile.
   turbopack: { root: import.meta.dirname },

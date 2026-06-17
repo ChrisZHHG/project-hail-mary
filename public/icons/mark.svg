@@ -1,34 +1,32 @@
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="36%" r="78%">
+    <radialGradient id="bg" cx="50%" cy="42%" r="78%">
       <stop offset="0%" stop-color="#0b0e16"/>
       <stop offset="100%" stop-color="#000000"/>
     </radialGradient>
-    <linearGradient id="trail" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#2ce6ff"/>
-      <stop offset="52%" stop-color="#ff5e1a"/>
-      <stop offset="100%" stop-color="#ffc7a3"/>
-    </linearGradient>
     <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="9"/>
+      <feGaussianBlur stdDeviation="10"/>
     </filter>
   </defs>
 
-  <rect width="512" height="512" rx="0" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#bg)"/>
 
-  <!-- orbit ring -->
-  <ellipse cx="252" cy="266" rx="146" ry="146" fill="none"
-           stroke="#2ce6ff" stroke-opacity="0.16" stroke-width="6"/>
+  <!-- attention: the scope / lens ring you look through -->
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#2ce6ff" stroke-opacity="0.55" stroke-width="8"/>
 
-  <!-- launch trajectory -->
-  <path d="M128 388 Q 236 300 388 136" fill="none"
-        stroke="url(#trail)" stroke-width="24" stroke-linecap="round"/>
+  <!-- intention: crosshair ticks aiming at the center -->
+  <g stroke="#e9ecf6" stroke-width="9" stroke-linecap="round">
+    <line x1="256" y1="84" x2="256" y2="150"/>
+    <line x1="256" y1="362" x2="256" y2="428"/>
+    <line x1="84" y1="256" x2="150" y2="256"/>
+    <line x1="362" y1="256" x2="428" y2="256"/>
+  </g>
 
-  <!-- payload glow + node -->
-  <circle cx="388" cy="136" r="52" fill="#ff5e1a" opacity="0.45" filter="url(#glow)"/>
-  <circle cx="388" cy="136" r="31" fill="#ffe2d2"/>
-  <circle cx="388" cy="136" r="31" fill="none" stroke="#ff5e1a" stroke-width="7"/>
+  <!-- inner lock ring -->
+  <circle cx="256" cy="256" r="80" fill="none" stroke="#ff5e1a" stroke-width="7"/>
 
-  <!-- launch base -->
-  <circle cx="128" cy="388" r="15" fill="#2ce6ff"/>
+  <!-- the point of focus -->
+  <circle cx="256" cy="256" r="48" fill="#ff5e1a" opacity="0.4" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="23" fill="#ff5e1a"/>
+  <circle cx="256" cy="256" r="9" fill="#ffe2d2"/>
 </svg>

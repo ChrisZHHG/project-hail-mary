@@ -36,6 +36,10 @@ export function useTodayReadiness() {
   return useLiveQuery(() => repo.getReadiness(today()), []);
 }
 
+export function useWeeklyReadiness() {
+  return useLiveQuery(() => repo.getWeeklyReadiness(), []);
+}
+
 export function useCompletedSessions() {
   return useLiveQuery(
     () =>

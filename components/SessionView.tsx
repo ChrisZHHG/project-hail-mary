@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { repo } from "@/lib/data/repository";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/data/db";
+import { repo, today } from "@/lib/data/repository";
 import { useExerciseInstances, useSessionLogs, useWorkout } from "@/lib/data/hooks";
 import { sumVolume, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
@@ -16,12 +18,24 @@ const SECTION_LABEL: Record<WorkoutSection, string> = {
 };
 const SECTION_ORDER: WorkoutSection[] = ["warmup", "main", "cardio"];
 
+const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fmtDay = (iso: string) => {
+  const d = new Date(iso + "T00:00:00");
+  return `${WEEKDAY[d.getDay()]} · ${MONTH[d.getMonth()]} ${d.getDate()}`;
+};
+
 export default function SessionView({ workoutId }: { workoutId: string }) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const workout = useWorkout(workoutId);
   const instances = useExerciseInstances(workoutId);
   const logs = useSessionLogs(sessionId ?? undefined) ?? [];
+  const session = useLiveQuery(
+    () => (sessionId ? db.sessions.get(sessionId) : undefined),
+    [sessionId]
+  );
+  const dayLabel = fmtDay(session?.date ?? today());
 
   useEffect(() => {
     let alive = true;
@@ -58,7 +72,10 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-xl font-bold text-ink">{workout.name}</h1>
-            <p className="eyebrow mt-0.5">{workout.subtitle}</p>
+            <p className="eyebrow mt-0.5">
+              {dayLabel}
+              {workout.subtitle ? ` · ${workout.subtitle}` : ""}
+            </p>
           </div>
           <div className="text-right">
             <div className="tnum text-2xl font-bold text-cyan text-glow-cyan">

@@ -1,23 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { useWorkouts, useTodayReadiness, useCompletedSessions, useAllSetLogs } from "@/lib/data/hooks";
+import { useEffect, useMemo, useState } from "react";
+import {
+  useWorkouts,
+  useWeeklyReadiness,
+  useCompletedSessions,
+  useAllSetLogs,
+} from "@/lib/data/hooks";
+import { isWeekend } from "@/lib/data/repository";
 import { LEVEL_META } from "@/lib/data/readiness";
+import { PRINCIPLES } from "@/lib/principles";
 import { sumVolume, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
 
+const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const fmtDay = (iso: string) => {
+  const d = new Date(iso + "T00:00:00");
+  return `${WEEKDAY[d.getDay()]} · ${iso.slice(5).replace("-", "/")}`;
+};
+
 export default function Home() {
   const workouts = useWorkouts();
-  const readiness = useTodayReadiness();
+  const weekly = useWeeklyReadiness();
   const completed = useCompletedSessions();
   const allLogs = useAllSetLogs();
+  // Compute after mount to avoid a build-time vs client hydration mismatch.
+  const [weekend, setWeekend] = useState(false);
+  useEffect(() => setWeekend(isWeekend()), []);
 
   const lastSession = completed?.[0];
   const lastVolume =
-    lastSession && allLogs
-      ? sumVolume(allLogs.filter((l) => l.sessionId === lastSession.id))
-      : 0;
+    lastSession && allLogs ? sumVolume(allLogs.filter((l) => l.sessionId === lastSession.id)) : 0;
 
   const nextWorkout = useMemo(() => {
     if (!workouts?.length) return undefined;
@@ -38,34 +52,38 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Readiness */}
-      {readiness ? (
-        <Link href="/readiness" className={`panel block border-l-2 p-4 ${LEVEL_META[readiness.level].ring}`}>
+      {/* Weekly readiness */}
+      {weekly ? (
+        <Link href="/readiness" className={`panel block border-l-2 p-4 ${LEVEL_META[weekly.level].ring}`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="eyebrow">Readiness · today</p>
-              <p className={`mt-1 text-sm font-semibold ${LEVEL_META[readiness.level].color}`}>
-                {LEVEL_META[readiness.level].label}
+              <p className="eyebrow">This week</p>
+              <p className={`mt-1 text-sm font-semibold ${LEVEL_META[weekly.level].color}`}>
+                {LEVEL_META[weekly.level].label}
               </p>
             </div>
             <div className="tnum text-3xl font-bold text-ink">
-              {readiness.totalScore}
+              {weekly.totalScore}
               <span className="text-base text-faint">/100</span>
             </div>
           </div>
-          <p className="mt-2 text-[0.85rem] leading-snug text-muted">{readiness.recommendation}</p>
+          <p className="mt-2 text-[0.85rem] leading-snug text-muted">{weekly.recommendation}</p>
           <p className="eyebrow mt-2 text-cyan">Tap to update →</p>
         </Link>
       ) : (
         <Link
           href="/readiness"
-          className="panel flex items-center justify-between p-4 transition active:scale-[0.99]"
+          className={`panel flex items-center justify-between p-4 transition active:scale-[0.99] ${
+            weekend ? "border-laser/40 glow-laser" : ""
+          }`}
         >
           <div>
-            <p className="eyebrow">First thing</p>
-            <p className="mt-1 text-base font-semibold text-ink">How are you feeling today?</p>
+            <p className="eyebrow">{weekend ? "Weekend check-in" : "Weekly check-in"}</p>
+            <p className="mt-1 text-base font-semibold text-ink">How was your week?</p>
             <p className="mt-0.5 text-[0.8rem] text-muted">
-              60-second check-in tunes today&apos;s volume.
+              {weekend
+                ? "Tunes next week's volume — your coach adjusts from this."
+                : "Due on the weekend. Sets next week's plan."}
             </p>
           </div>
           <span className="text-2xl text-laser">→</span>
@@ -93,12 +111,31 @@ export default function Home() {
         Choose another day
       </Link>
 
+      {/* Method teaser */}
+      <Link href="/method" className="panel block p-4 transition active:scale-[0.99]">
+        <div className="flex items-center justify-between">
+          <p className="eyebrow">The Method</p>
+          <span className="text-cyan">→</span>
+        </div>
+        <p className="mt-1 text-[0.85rem] text-muted">Why every set is built the way it is.</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {PRINCIPLES.slice(0, 4).map((p) => (
+            <span
+              key={p.tag}
+              className="rounded border border-cyan/30 px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-cyan"
+            >
+              {p.tag}
+            </span>
+          ))}
+        </div>
+      </Link>
+
       {/* Recent */}
       {lastSession ? (
         <Link href="/progress" className="panel flex items-center justify-between p-4">
           <div>
             <p className="eyebrow">Last session</p>
-            <p className="mt-1 text-sm text-muted">{lastSession.date}</p>
+            <p className="mt-1 text-sm text-muted">{fmtDay(lastSession.date)}</p>
           </div>
           <div className="text-right">
             <div className="tnum text-xl font-bold text-cyan">

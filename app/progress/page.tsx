@@ -7,6 +7,7 @@ import { sumVolume, setVolume, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
 import VolumeTrend from "@/components/VolumeTrend";
 import MuscleLoad from "@/components/MuscleLoad";
+import BodyHeatmap from "@/components/BodyHeatmap";
 
 const shortDate = (d: string) => d.slice(5).replace("-", "/");
 
@@ -86,7 +87,10 @@ export default function ProgressPage() {
 
       <section className="panel p-4">
         <h2 className="eyebrow mb-3">Muscle load — all time</h2>
-        <MuscleLoad data={muscleData} />
+        <BodyHeatmap data={muscleData} />
+        <div className="mt-4 border-t border-line pt-4">
+          <MuscleLoad data={muscleData} />
+        </div>
       </section>
     </div>
   );

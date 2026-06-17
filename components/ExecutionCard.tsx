@@ -5,8 +5,10 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
 import { repo } from "@/lib/data/repository";
 import { BRAND } from "@/lib/brand";
+import { methodTag } from "@/lib/principles";
 import type { ExerciseInstance, SetLog } from "@/lib/data/types";
 import Stepper from "./Stepper";
+import WeightControl from "./WeightControl";
 import RirSelector from "./RirSelector";
 import Cue from "./Cue";
 
@@ -30,6 +32,7 @@ export default function ExecutionCard({
   const repsNumeric = /^\d+(-\d+)?$/.test(instance.targetRepsRange);
   const showReps = !isCardio && repsNumeric;
   const showRir = !!instance.targetRir;
+  const mTag = methodTag(exercise.name, exercise.category);
 
   const logs =
     useLiveQuery(
@@ -70,7 +73,7 @@ export default function ExecutionCard({
     const src = sessionSource ?? lastEntry;
     const d = drafts[n] ?? {};
     const existing = logByNum.get(n);
-    const weight = showWeight ? (d.weight ?? src?.weight) : undefined;
+    const weight = showWeight ? (d.weight ?? src?.weight ?? 50) : undefined;
     const reps = showReps ? (d.reps ?? src?.reps ?? lowRep) : undefined;
     const rir = showRir ? (d.rir ?? src?.rir ?? targetRir) : undefined;
     await repo.upsertSet({
@@ -111,6 +114,11 @@ export default function ExecutionCard({
             {instance.optional ? (
               <span className="rounded border border-line px-1.5 py-0.5 text-[0.6rem] uppercase tracking-wider text-faint">
                 optional
+              </span>
+            ) : null}
+            {mTag ? (
+              <span className="rounded border border-cyan/40 px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-cyan">
+                {mTag}
               </span>
             ) : null}
           </div>
@@ -186,28 +194,25 @@ export default function ExecutionCard({
                 ) : null}
               </div>
 
-              {showWeight || showReps ? (
-                <div className="flex items-end justify-center gap-4">
-                  {showWeight ? (
-                    <Stepper
-                      label={`Weight (${unit})`}
-                      value={draft.weight}
-                      placeholder={prefillSrc?.weight}
-                      onChange={(v) => setDraft(n, { weight: v })}
-                      step={BRAND.weightStep}
-                      accent="laser"
-                    />
-                  ) : null}
-                  {showReps ? (
-                    <Stepper
-                      label="Reps"
-                      value={draft.reps}
-                      placeholder={prefillSrc?.reps ?? lowRep}
-                      onChange={(v) => setDraft(n, { reps: v })}
-                      step={1}
-                      accent="cyan"
-                    />
-                  ) : null}
+              {showWeight ? (
+                <WeightControl
+                  label={`Weight (${unit})`}
+                  value={draft.weight}
+                  placeholder={prefillSrc?.weight ?? 50}
+                  onChange={(v) => setDraft(n, { weight: v })}
+                  step={BRAND.weightStep}
+                />
+              ) : null}
+              {showReps ? (
+                <div className={`flex justify-center ${showWeight ? "mt-3" : ""}`}>
+                  <Stepper
+                    label="Reps"
+                    value={draft.reps}
+                    placeholder={prefillSrc?.reps ?? lowRep}
+                    onChange={(v) => setDraft(n, { reps: v })}
+                    step={1}
+                    accent="cyan"
+                  />
                 </div>
               ) : null}
 
