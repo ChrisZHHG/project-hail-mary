@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+/* ============================================================
+   PROJECT HAIL MARY — deep-space / high-tech sci-fi theme
+   true black base · laser-orange + neon-cyan accents
+   ============================================================ */
+
+@theme {
+  /* surfaces (true black up through lifted panels) */
+  --color-void: #000000;
+  --color-abyss: #06070b;
+  --color-panel: #0d0f16;
+  --color-elevated: #141823;
+  --color-line: #232838;
+  --color-line-soft: #181c28;
+
+  /* text */
+  --color-ink: #e9ecf6;
+  --color-muted: #8b91a6;
+  --color-faint: #565c70;
+
+  /* accents */
+  --color-laser: #ff5e1a;        /* laser orange — primary action / energy */
+  --color-laser-soft: #ff9059;
+  --color-cyan: #2ce6ff;         /* neon cyan — data / secondary highlight */
+  --color-cyan-soft: #88f0ff;
+
+  /* status */
+  --color-danger: #ff3b54;
+  --color-warn: #ffc23d;
+  --color-go: #2ce6a8;
+
+  --radius-card: 1.1rem;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-void);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* faint deep-space wash behind everything (nebula + grid horizon) */
+.starfield {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 500px at 50% -8%, rgba(255, 94, 26, 0.10), transparent 60%),
+    radial-gradient(700px 600px at 85% 110%, rgba(44, 230, 255, 0.08), transparent 60%),
+    radial-gradient(1200px 800px at 12% 100%, rgba(44, 230, 255, 0.05), transparent 55%);
+}
+
+/* tabular, slightly condensed numerals everywhere numbers matter */
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
+}
+
+/* glow helpers */
+.glow-laser {
+  box-shadow: 0 0 0 1px rgba(255, 94, 26, 0.35), 0 0 28px -6px rgba(255, 94, 26, 0.55);
+}
+.glow-cyan {
+  box-shadow: 0 0 0 1px rgba(44, 230, 255, 0.3), 0 0 26px -8px rgba(44, 230, 255, 0.5);
+}
+.text-glow-laser {
+  text-shadow: 0 0 18px rgba(255, 94, 26, 0.45);
+}
+.text-glow-cyan {
+  text-shadow: 0 0 18px rgba(44, 230, 255, 0.45);
+}
+
+/* hairline panel */
+.panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)) ,
+    var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+}
+
+/* uppercase mono label */
+.eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.6875rem;
+  color: var(--color-faint);
+}
+
+/* big tap target floor for gym use */
+.tap {
+  min-height: 3rem;
+  min-width: 3rem;
+  touch-action: manipulation;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 160ms ease-out; }
+
+@keyframes logged-flash {
+  0% { box-shadow: 0 0 0 1px var(--color-go), 0 0 30px -4px rgba(44, 230, 168, 0.7); }
+  100% { box-shadow: 0 0 0 1px var(--color-line), 0 0 0 0 transparent; }
+}
+.animate-logged { animation: logged-flash 700ms ease-out; }
+
+/* range slider (RIR / readiness) — large, sci-fi */
+input[type="range"].sl {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--color-elevated);
+  outline: none;
+}
+input[type="range"].sl::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--color-laser);
+  border: 3px solid #000;
+  box-shadow: 0 0 0 1px rgba(255, 94, 26, 0.5), 0 0 22px -2px rgba(255, 94, 26, 0.8);
+  cursor: pointer;
+}
+input[type="range"].sl::-moz-range-thumb {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #000;
+  border-radius: 999px;
+  background: var(--color-laser);
+}
+input[type="range"].sl.cyan::-webkit-slider-thumb {
+  background: var(--color-cyan);
+  box-shadow: 0 0 0 1px rgba(44, 230, 255, 0.5), 0 0 22px -2px rgba(44, 230, 255, 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
