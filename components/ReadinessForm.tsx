@@ -57,7 +57,7 @@ export default function ReadinessForm() {
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
-        <p className="eyebrow">Pre-session check-in</p>
+        <p className="eyebrow">Systems check</p>
         <h1 className="mt-1 text-2xl font-bold text-ink">Readiness</h1>
       </header>
 

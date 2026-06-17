@@ -12,11 +12,12 @@ export const BRAND = {
   name: "Hail Mary",
   /** Short name for the home-screen icon (<= 12 chars looks best). */
   shortName: "Hail Mary",
-  /** One-line positioning shown under the wordmark / in metadata. */
-  tagline: "Train in the dark.",
+  /** One-line positioning shown under the wordmark / in metadata.
+   *  Ethos: train with intention + attention — every rep on purpose. */
+  tagline: "Train with intention.",
   /** Longer description for the PWA manifest + SEO. */
   description:
-    "A thumb-friendly, offline strength & conditioning logger. Smart defaults, hardcore coaching cues, zero spreadsheet friction.",
+    "Train with intention and attention. A thumb-friendly S&C logger with smart defaults and hardcore coaching cues — every rep on purpose.",
   /** Default weight unit for this trial (the seed program is in lbs). */
   unit: "lbs" as "lbs" | "kg",
   /** Default weight step for the +/- steppers. */

@@ -69,7 +69,7 @@ export default function ProgressPage() {
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
-        <p className="eyebrow">The receipts</p>
+        <p className="eyebrow">Telemetry</p>
         <h1 className="mt-1 text-2xl font-bold text-ink">Progress</h1>
       </header>
 

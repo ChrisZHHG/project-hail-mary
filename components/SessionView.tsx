@@ -48,7 +48,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
   }
 
   if (!workout || !instances || !sessionId) {
-    return <p className="mt-10 text-center text-faint">Spinning up the reel…</p>;
+    return <p className="mt-10 text-center text-faint">Calibrating…</p>;
   }
 
   return (
