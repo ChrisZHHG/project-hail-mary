@@ -88,6 +88,20 @@ export class HailMaryDB extends Dexie {
         await tx.table("setLogs").bulkPut(WATCH_SESSION_LOGS);
       });
 
+    /* v4 — corrected reconstruction after Chris clarified his solo split
+     * (back + abs + biceps + triceps lateral head; the rope work is a tricep
+     * pushdown, not a back pulldown). Reconstructed logs are regenerated
+     * wholesale: they all share the `log-watch-` id prefix, so this never
+     * touches live in-app logs. */
+    this.version(4)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table("exercises").bulkPut(SEED_EXERCISES);
+        await tx.table("exercises").delete("ex-ropePulldown"); // mis-assigned in v3
+        await tx.table("setLogs").where("id").startsWith("log-watch-").delete();
+        await tx.table("setLogs").bulkAdd(WATCH_SESSION_LOGS);
+      });
+
     this.on("populate", () => this.seed());
   }
 

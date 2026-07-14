@@ -26,28 +26,36 @@ export const WATCH_SESSIONS: Session[] = parseWatchRows(RAW).map(toSession);
 /* ------------------------------------------------------------------ *
  * Reconstructed set logs (estimated: true on every row).              *
  *                                                                     *
- * Chris described his actual freestyle back-day routine for these     *
- * sessions (July 2026): warm up with 2-3 bodyweight pull-ups → lat    *
- * pulldown 4-5 sets (stack 10 ≈ 100 lbs) or rope straight-arm         *
- * pulldown (≈ 50 lbs) → single-arm machine row 4 sets, right arm ~2   *
- * reps ahead (R10/L8 or R8/L6, stack 4-5 ≈ 45 lbs) → sometimes a      *
- * seated cable row → cable crunch (stack 9-10 ≈ 95 lbs) added from    *
- * ~June 21. Stack plates ≈ 10 lbs each (Chris's pick); reps 8-10.     *
+ * Chris's described solo routine for these June sessions: back + abs  *
+ * + biceps + triceps (lateral head). Legs/chest only happen on        *
+ * coached program days (which have real logs) — deliberately NOT      *
+ * reconstructed here, per Chris: no estimates for movements without   *
+ * a real recorded weight.                                             *
  *                                                                     *
- * These are estimates, flagged as such and rendered with "~" in the   *
- * UI. Where the watch measured total volume (6/07, 6/16) the measured *
- * number wins over these logs (see sessionTonnageLbs).                *
+ * Per session: 2-3 bodyweight pull-ups → lat pulldown (stack 10 ≈     *
+ * 100 lbs) → single-arm machine row, right arm ~2 reps ahead          *
+ * (stack 4-5 ≈ 45 lbs) → DB preacher curls @15 lbs (real weight from  *
+ * the sheet) → rope pushdown for the triceps lateral head (the        *
+ * "马尾辫绳往下拉" — stack ~5 ≈ 50 lbs, Chris to confirm) → sometimes   *
+ * a seated cable row → cable crunch (stack 9-10 ≈ 95 lbs) from ~6/21. *
+ * Stack plates ≈ 10 lbs each (Chris's pick); reps 8-10 → 8 used       *
+ * (conservative; calibrates within ~10% of the 6/07 measured volume). *
+ *                                                                     *
+ * Rendered with "~" everywhere. Where the watch measured total volume *
+ * (6/07, 6/16) the measured number wins (see sessionTonnageLbs).      *
  * ------------------------------------------------------------------ */
 
 const LBS_PER_PLATE = 10;
 const W = {
   pulldown: 10 * LBS_PER_PLATE, // 背 stack 10
   saRow: 4.5 * LBS_PER_PLATE, // 提拉 stack 4-5 → 45
-  ropePulldown: 5 * LBS_PER_PLATE,
+  preacher: 15, // real logged weight (sheet)
+  ropePushdown: 5 * LBS_PER_PLATE, // assumption — Chris to confirm stack
   seatedRow: 5 * LBS_PER_PLATE,
   cableCrunch: 9.5 * LBS_PER_PLATE, // 腹肌 stack 9-10 → 95
 };
 const CRUNCH_FROM = "2026-06-21"; // "最近加的"
+const REPS = 8;
 
 function buildWatchLogs(): SetLog[] {
   const logs: SetLog[] = [];
@@ -79,12 +87,8 @@ function buildWatchLogs(): SetLog[] {
     add("pulldown", undefined, 3);
     add("pulldown", undefined, 3);
 
-    // main vertical pull: usually lat pulldown, every ~3rd session the rope
-    if (i % 3 === 2) {
-      for (let s = 0; s < (short ? 3 : 4); s++) add("ropePulldown", W.ropePulldown, 9);
-    } else {
-      for (let s = 0; s < (short ? 4 : 5); s++) add("pulldown", W.pulldown, 9);
-    }
+    // lat pulldown
+    for (let s = 0; s < (short ? 3 : 4); s++) add("pulldown", W.pulldown, REPS);
 
     // single-arm machine row — each arm logged as its own set, right leads
     const [r, l] = i % 2 === 0 ? [10, 8] : [8, 6];
@@ -93,14 +97,20 @@ function buildWatchLogs(): SetLog[] {
       add("saRow", W.saRow, l);
     }
 
+    // biceps — preacher curls at the sheet's real weight
+    for (let s = 0; s < (short ? 2 : 3); s++) add("preacher", W.preacher, REPS);
+
+    // triceps lateral head — rope pushdown (program's cableTri slot)
+    for (let s = 0; s < (short ? 2 : 3); s++) add("cableTri", W.ropePushdown, REPS);
+
     // seated cable row, some days (skipped on short sessions)
     if (i % 3 === 1 && !short) {
-      for (let s = 0; s < 3; s++) add("seatedRow", W.seatedRow, 9);
+      for (let s = 0; s < 3; s++) add("seatedRow", W.seatedRow, REPS);
     }
 
     // cable crunch — recent addition
     if (session.date >= CRUNCH_FROM) {
-      for (let s = 0; s < 3; s++) add("cableCrunch", W.cableCrunch, 9);
+      for (let s = 0; s < 3; s++) add("cableCrunch", W.cableCrunch, REPS);
     }
   });
 

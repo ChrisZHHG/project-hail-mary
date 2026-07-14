@@ -139,12 +139,6 @@ const CATALOG = {
     isWeighted: true,
     biomechanicNotes: "Right arm runs ~2 reps ahead of the left — log each arm as its own set.",
   },
-  ropePulldown: {
-    name: "Rope Straight-Arm Pulldown",
-    targetMuscle: "Back",
-    category: "isolation",
-    isWeighted: true,
-  },
   seatedRow: {
     name: "Seated Cable Row",
     targetMuscle: "Back",
