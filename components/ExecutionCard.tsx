@@ -8,6 +8,7 @@ import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { methodTag, theoryForExercise } from "@/lib/theory";
 import { exerciseNames, useNameLang } from "@/lib/prefs";
+import { useT, useMuscleName } from "@/lib/i18n";
 import type { ExerciseInstance, SetLog } from "@/lib/data/types";
 import Stepper from "./Stepper";
 import WeightControl from "./WeightControl";
@@ -37,6 +38,8 @@ export default function ExecutionCard({
   const mTag = methodTag(exercise.name, exercise.category);
   const relatedTheory = theoryForExercise(exercise.id, exercise.targetMuscle);
   const lang = useNameLang();
+  const t = useT();
+  const muscleName = useMuscleName();
   const names = exerciseNames(exercise, lang);
 
   const logs =
@@ -118,7 +121,7 @@ export default function ExecutionCard({
             <h3 className="text-base font-semibold leading-tight text-ink">{names.primary}</h3>
             {instance.optional ? (
               <span className="rounded border border-line px-1.5 py-0.5 text-[0.6rem] uppercase tracking-wider text-faint">
-                optional
+                {t("optional")}
               </span>
             ) : null}
             {mTag ? (
@@ -140,7 +143,7 @@ export default function ExecutionCard({
             <p className="mt-0.5 truncate text-[0.62rem] text-faint">{names.secondary}</p>
           ) : null}
           <p className="eyebrow mt-1">
-            {exercise.targetMuscle}
+            {muscleName(exercise.targetMuscle)}
             {" · "}
             {instance.targetSets} × {instance.targetRepsRange}
             {instance.cardioSpec ? ` · ${instance.cardioSpec}` : ""}
@@ -153,7 +156,7 @@ export default function ExecutionCard({
 
       {lastEntry && (showWeight || showReps) ? (
         <p className="tnum mt-2 text-[0.75rem] text-laser-soft">
-          Last:{" "}
+          {t("last")}:{" "}
           {lastEntry.weight != null ? `${lastEntry.weight}${unit} × ` : ""}
           {lastEntry.reps ?? "—"}
           {lastEntry.rir != null ? ` @${lastEntry.rir} RIR` : ""}
@@ -179,10 +182,10 @@ export default function ExecutionCard({
                   flash === n ? "animate-logged" : ""
                 }`}
               >
-                <span className="eyebrow text-faint">Set {n}</span>
+                <span className="eyebrow text-faint">{t("set")} {n}{t("setUnit")}</span>
                 <span className="tnum text-sm font-semibold text-ink">
                   {log?.weight != null ? `${log.weight}${unit} × ` : ""}
-                  {log?.reps ?? (isCardio ? "done" : "—")}
+                  {log?.reps ?? (isCardio ? t("doneShort") : "—")}
                   {log?.rir != null ? (
                     <span className="text-faint"> @{log.rir} RIR</span>
                   ) : null}
@@ -196,7 +199,7 @@ export default function ExecutionCard({
           return (
             <div key={n} className="rounded-xl border border-line bg-abyss/60 p-3">
               <div className="mb-2 flex items-center justify-between">
-                <span className="eyebrow">Set {n}</span>
+                <span className="eyebrow">{t("set")} {n}{t("setUnit")}</span>
                 {n > instance.targetSets ? (
                   <button
                     type="button"
@@ -206,14 +209,14 @@ export default function ExecutionCard({
                     }}
                     className="text-[0.7rem] text-faint hover:text-danger"
                   >
-                    remove
+                    {t("remove")}
                   </button>
                 ) : null}
               </div>
 
               {showWeight ? (
                 <WeightControl
-                  label={`Weight (${unit})`}
+                  label={`${t("weight")} (${unit})`}
                   value={draft.weight}
                   placeholder={prefillSrc?.weight ?? 50}
                   onChange={(v) => setDraft(n, { weight: v })}
@@ -223,7 +226,7 @@ export default function ExecutionCard({
               {showReps ? (
                 <div className={`flex justify-center ${showWeight ? "mt-3" : ""}`}>
                   <Stepper
-                    label="Reps"
+                    label={t("reps")}
                     value={draft.reps}
                     placeholder={prefillSrc?.reps ?? lowRep}
                     onChange={(v) => setDraft(n, { reps: v })}
@@ -248,7 +251,7 @@ export default function ExecutionCard({
                 onClick={() => logSet(n)}
                 className="tap mt-3 w-full rounded-xl bg-laser py-3 text-sm font-bold uppercase tracking-wider text-black transition active:scale-[0.98] glow-laser"
               >
-                {isCardio || (!showWeight && !showReps) ? "Mark done" : "Log set"}
+                {isCardio || (!showWeight && !showReps) ? t("markDone") : t("logSet")}
               </button>
             </div>
           );
@@ -260,7 +263,7 @@ export default function ExecutionCard({
             onClick={() => setExtra((x) => x + 1)}
             className="rounded-xl border border-dashed border-line py-2 text-[0.75rem] uppercase tracking-wider text-faint transition hover:border-cyan/40 hover:text-cyan"
           >
-            + add set
+            {t("addSet")}
           </button>
         ) : null}
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fmtVolume } from "@/lib/volume";
+import { useT } from "@/lib/i18n";
 
 export interface TrendPoint {
   label: string;
@@ -16,9 +17,10 @@ export interface TrendPoint {
  *  oversized tap targets; the selected point's details render in a caption
  *  row below the plot (mobile-safe — no floating tooltip collisions). */
 export default function VolumeTrend({ points }: { points: TrendPoint[] }) {
+  const t = useT();
   const [active, setActive] = useState<number | null>(null);
   if (!points.length) {
-    return <p className="text-sm text-faint">Log a session to start the trend.</p>;
+    return <p className="text-sm text-faint">{t("logToStart")}</p>;
   }
 
   const W = 320;
@@ -81,10 +83,10 @@ export default function VolumeTrend({ points }: { points: TrendPoint[] }) {
           {sel ? (
             <>
               {sel.label} · {fmtVolume(sel.value)} lbs
-              {sel.imported ? <span className="text-faint"> · watch</span> : null}
+              {sel.imported ? <span className="text-faint"> · {t("watchBadge")}</span> : null}
             </>
           ) : (
-            <span className="text-laser-soft">peak {fmtVolume(max)}</span>
+            <span className="text-laser-soft">{t("peak")} {fmtVolume(max)}</span>
           )}
         </p>
         {hasImported ? (
@@ -92,7 +94,7 @@ export default function VolumeTrend({ points }: { points: TrendPoint[] }) {
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
               <circle cx="5" cy="5" r="3.5" fill="#050505" stroke="#2ce6ff" strokeWidth="1.5" />
             </svg>
-            imported
+            {t("imported")}
           </p>
         ) : null}
       </div>

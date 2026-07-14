@@ -9,7 +9,9 @@ import {
   useAllSetLogs,
 } from "@/lib/data/hooks";
 import { isWeekend } from "@/lib/data/repository";
-import { LEVEL_META } from "@/lib/data/readiness";
+import { LEVEL_META, REC_ZH, REC_ZH_JOINT } from "@/lib/data/readiness";
+import { useT } from "@/lib/i18n";
+import { useNameLang } from "@/lib/prefs";
 import { PRINCIPLES } from "@/lib/theory";
 import { sessionTonnageLbs, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
@@ -18,6 +20,8 @@ import { downloadWorkoutIcs, nextOccurrence } from "@/lib/ics";
 import { daysSinceBackup } from "@/lib/backup";
 
 export default function Home() {
+  const t = useT();
+  const lang = useNameLang();
   const workouts = useWorkouts();
   const weekly = useWeeklyReadiness();
   const completed = useCompletedSessions();
@@ -79,9 +83,9 @@ export default function Home() {
         <Link href="/readiness" className={`panel block border-l-2 p-4 ${LEVEL_META[weekly.level].ring}`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="eyebrow">This week</p>
+              <p className="eyebrow">{t("thisWeek")}</p>
               <p className={`mt-1 text-sm font-semibold ${LEVEL_META[weekly.level].color}`}>
-                {LEVEL_META[weekly.level].label}
+                {lang === "zh" ? LEVEL_META[weekly.level].labelZh : LEVEL_META[weekly.level].label}
               </p>
             </div>
             <div className="tnum text-3xl font-bold text-ink">
@@ -89,8 +93,14 @@ export default function Home() {
               <span className="text-base text-faint">/100</span>
             </div>
           </div>
-          <p className="mt-2 text-[0.85rem] leading-snug text-muted">{weekly.recommendation}</p>
-          <p className="eyebrow mt-2 text-cyan">Tap to update →</p>
+          <p className="mt-2 text-[0.85rem] leading-snug text-muted">
+            {lang === "zh"
+              ? weekly.jointPain > 3
+                ? REC_ZH_JOINT
+                : REC_ZH[weekly.level]
+              : weekly.recommendation}
+          </p>
+          <p className="eyebrow mt-2 text-cyan">{t("tapToUpdate")}</p>
         </Link>
       ) : (
         <Link
@@ -100,12 +110,10 @@ export default function Home() {
           }`}
         >
           <div>
-            <p className="eyebrow">{weekend ? "Weekend check-in" : "Weekly check-in"}</p>
-            <p className="mt-1 text-base font-semibold text-ink">How was your week?</p>
+            <p className="eyebrow">{weekend ? t("weekendCheckin") : t("weeklyCheckin")}</p>
+            <p className="mt-1 text-base font-semibold text-ink">{t("howWasWeek")}</p>
             <p className="mt-0.5 text-[0.8rem] text-muted">
-              {weekend
-                ? "Tunes next week's volume — your coach adjusts from this."
-                : "Due on the weekend. Sets next week's plan."}
+              {weekend ? t("tunesNext") : t("dueWeekend")}
             </p>
           </div>
           <span className="text-2xl text-laser">→</span>
@@ -116,11 +124,11 @@ export default function Home() {
       {nextWorkout ? (
         <div className="relative overflow-hidden rounded-card border border-laser/40 bg-laser/[0.08] glow-laser">
           <Link href={`/session/${nextWorkout.id}`} className="block p-5 transition active:scale-[0.99]">
-            <p className="eyebrow text-laser-soft">Up next</p>
+            <p className="eyebrow text-laser-soft">{t("upNext")}</p>
             <h2 className="mt-1 text-2xl font-bold text-ink">{nextWorkout.name}</h2>
             <p className="mt-0.5 text-sm text-muted">{nextWorkout.subtitle}</p>
             <span className="mt-3 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-laser">
-              Start training →
+              {t("startTraining")}
             </span>
           </Link>
           <button
@@ -128,21 +136,21 @@ export default function Home() {
             onClick={() => downloadWorkoutIcs(nextWorkout)}
             className="tap flex w-full items-center justify-between border-t border-laser/20 px-5 py-2.5 text-[0.7rem] font-semibold uppercase tracking-wider text-muted transition hover:text-cyan"
           >
-            <span>Remind me{nextDayLabel ? ` · ${nextDayLabel}` : ""}</span>
-            <span className="text-cyan">+ Calendar</span>
+            <span>{t("remindMe")}{nextDayLabel ? ` · ${nextDayLabel}` : ""}</span>
+            <span className="text-cyan">{t("addCalendar")}</span>
           </button>
         </div>
       ) : (
-        <p className="text-faint">Loading your program…</p>
+        <p className="text-faint">{t("loading")}</p>
       )}
 
       <div className="flex items-center justify-center gap-4">
         <Link href="/train" className="text-center text-[0.8rem] uppercase tracking-wider text-faint hover:text-cyan">
-          Choose another day
+          {t("chooseAnother")}
         </Link>
         <span className="text-faint">·</span>
         <Link href="/freestyle" className="text-center text-[0.8rem] uppercase tracking-wider text-cyan">
-          Freestyle 自主练
+          {t("freestyleShort")}
         </Link>
       </div>
 
@@ -153,10 +161,8 @@ export default function Home() {
           className="panel flex items-center justify-between border-l-2 border-warn/60 p-4 transition active:scale-[0.99]"
         >
           <div>
-            <p className="eyebrow text-warn">Neck flagged {weekly!.soreMap!["Neck"]}/10 this week</p>
-            <p className="mt-1 text-[0.85rem] text-muted">
-              Run the Shoulder Story protocol — 5 drills, before training.
-            </p>
+            <p className="eyebrow text-warn">{t("neckFlagged")} {weekly!.soreMap!["Neck"]}/10</p>
+            <p className="mt-1 text-[0.85rem] text-muted">{t("neckRun")}</p>
           </div>
           <span className="text-xl">📖</span>
         </Link>
@@ -165,10 +171,10 @@ export default function Home() {
       {/* Method teaser */}
       <Link href="/method" className="panel block p-4 transition active:scale-[0.99]">
         <div className="flex items-center justify-between">
-          <p className="eyebrow">The Method</p>
+          <p className="eyebrow">{t("methodTitle")}</p>
           <span className="text-cyan">→</span>
         </div>
-        <p className="mt-1 text-[0.85rem] text-muted">Why every set is built the way it is.</p>
+        <p className="mt-1 text-[0.85rem] text-muted">{t("methodDesc")}</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {PRINCIPLES.slice(0, 4).map((p) => (
             <span
@@ -185,7 +191,7 @@ export default function Home() {
       {lastSession ? (
         <Link href="/progress" className="panel flex items-center justify-between p-4">
           <div>
-            <p className="eyebrow">Last session</p>
+            <p className="eyebrow">{t("lastSession")}</p>
             <p className="mt-1 text-sm text-muted">
               {fmtDayLong(lastSession.date)}
               {lastSession.source === "watch" ? (
@@ -201,7 +207,7 @@ export default function Home() {
                 {fmtVolume(lastVolume)} <span className="text-xs font-normal text-faint">{BRAND.unit}</span>
               </div>
             ) : null}
-            <p className="eyebrow text-cyan">View progress →</p>
+            <p className="eyebrow text-cyan">{t("viewProgress")}</p>
           </div>
         </Link>
       ) : null}
@@ -213,8 +219,8 @@ export default function Home() {
           className="panel flex items-center justify-between border-l-2 border-cyan/40 p-3.5 transition active:scale-[0.99]"
         >
           <p className="text-[0.8rem] text-muted">
-            <span className="font-semibold text-cyan">Back up your data</span> — no export in{" "}
-            {backupDue === "never" ? "…ever" : `${backupDue} days`}. Takes 5 seconds.
+            <span className="font-semibold text-cyan">{t("backupTitle")}</span>{" "}
+            {backupDue === "never" ? t("backupNever") : `${backupDue} ${t("backupDays")}`}
           </p>
           <span className="text-cyan">💾</span>
         </Link>
@@ -224,7 +230,7 @@ export default function Home() {
         href="/coach"
         className="pb-2 text-center text-[0.7rem] uppercase tracking-wider text-faint transition hover:text-cyan"
       >
-        Coach view →
+        {t("coachView")}
       </Link>
     </div>
   );

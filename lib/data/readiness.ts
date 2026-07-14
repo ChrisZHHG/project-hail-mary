@@ -40,18 +40,21 @@ export const SORE_AREAS = [
 ] as const;
 
 export const READINESS_METRICS = [
-  { key: "energy", label: "Energy", invert: false, low: "Drained", high: "Wired" },
-  { key: "sleep", label: "Sleep", invert: false, low: "Wrecked", high: "Rested" },
-  { key: "mood", label: "Mood", invert: false, low: "Flat", high: "Fired up" },
-  { key: "soreness", label: "Soreness", invert: true, low: "Fresh", high: "Trashed" },
-  { key: "stress", label: "Stress", invert: true, low: "Calm", high: "Maxed" },
-  { key: "jointPain", label: "Joint pain", invert: true, low: "None", high: "Sharp" },
+  { key: "energy", label: "Energy", labelZh: "精力", invert: false, low: "Drained", lowZh: "耗尽", high: "Wired", highZh: "充沛" },
+  { key: "sleep", label: "Sleep", labelZh: "睡眠", invert: false, low: "Wrecked", lowZh: "稀烂", high: "Rested", highZh: "睡饱" },
+  { key: "mood", label: "Mood", labelZh: "状态", invert: false, low: "Flat", lowZh: "低落", high: "Fired up", highZh: "高涨" },
+  { key: "soreness", label: "Soreness", labelZh: "酸痛", invert: true, low: "Fresh", lowZh: "轻松", high: "Trashed", highZh: "散架" },
+  { key: "stress", label: "Stress", labelZh: "压力", invert: true, low: "Calm", lowZh: "平静", high: "Maxed", highZh: "爆表" },
+  { key: "jointPain", label: "Joint pain", labelZh: "关节痛", invert: true, low: "None", lowZh: "无", high: "Sharp", highZh: "刺痛" },
 ] as const satisfies ReadonlyArray<{
   key: keyof ReadinessInput;
   label: string;
+  labelZh: string;
   invert: boolean;
   low: string;
+  lowZh: string;
   high: string;
+  highZh: string;
 }>;
 
 /** Compute a 0-100 readiness score + a coaching recommendation.
@@ -98,10 +101,23 @@ export function scoreReadiness(input: ReadinessInput): {
 
 export const LEVEL_META: Record<
   ReadinessLevel,
-  { label: string; color: string; ring: string }
+  { label: string; labelZh: string; color: string; ring: string }
 > = {
-  go: { label: "GO", color: "text-go", ring: "border-go/60" },
-  steady: { label: "STEADY", color: "text-cyan", ring: "border-cyan/50" },
-  caution: { label: "CAUTION", color: "text-warn", ring: "border-warn/50" },
-  down: { label: "DOWNSCALE", color: "text-danger", ring: "border-danger/60" },
+  go: { label: "GO", labelZh: "冲", color: "text-go", ring: "border-go/60" },
+  steady: { label: "STEADY", labelZh: "稳", color: "text-cyan", ring: "border-cyan/50" },
+  caution: { label: "CAUTION", labelZh: "谨慎", color: "text-warn", ring: "border-warn/50" },
+  down: { label: "DOWNSCALE", labelZh: "降量", color: "text-danger", ring: "border-danger/60" },
 };
+
+/** 中文 versions of the coaching recommendations. Stored data keeps the
+ *  English sentence (scoreReadiness output) — these are display-only. */
+export const REC_ZH: Record<ReadinessLevel, string> = {
+  go: "绿灯。状态在线 — 按计划练，每个次数区间都冲上限，可以试试 PR。",
+  steady: "状态平稳。按计划执行，RIR 保持诚实。",
+  caution: "电量偏低。训练量减 ~20%，保持 3+ RIR，动作质量优先于重量。",
+  down: "储备不足。今天当作维持剂量 — 最低有效训练量，不硬磨。",
+};
+
+/** 中文 override for the joint-pain rule (level "down", different message). */
+export const REC_ZH_JOINT =
+  "关节痛偏高。训练量减 ~30%，避免大负重末端拉伸，冲重量前先告诉教练。";

@@ -15,6 +15,7 @@ import WeightControl from "@/components/WeightControl";
 import Stepper from "@/components/Stepper";
 import LangToggle from "@/components/LangToggle";
 import { exerciseNames, useNameLang } from "@/lib/prefs";
+import { useT, useMuscleName } from "@/lib/i18n";
 
 /** Freestyle logging — 自主训练. Pick a muscle on the body, recognize the
  *  machine by picture + 中文名, and log against last time's numbers. The
@@ -25,6 +26,8 @@ export default function FreestylePage() {
   const [muscle, setMuscle] = useState<string | null>(null);
   const [active, setActive] = useState<string[]>([]); // exerciseIds being logged
   const lang = useNameLang();
+  const t = useT();
+  const muscleName = useMuscleName();
 
   useEffect(() => {
     let alive = true;
@@ -55,7 +58,7 @@ export default function FreestylePage() {
   }, [exercises, wexs, logs, sessions, sessionId]);
 
   if (!exercises || !memory || !sessionId) {
-    return <p className="mt-10 text-center text-faint">Calibrating…</p>;
+    return <p className="mt-10 text-center text-faint">{t("calibrating")}</p>;
   }
 
   const pickable = exercises.filter(
@@ -81,17 +84,17 @@ export default function FreestylePage() {
         <div className="flex items-end justify-between">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-xl font-bold text-ink">Freestyle · 自主训练</h1>
+              <h1 className="text-xl font-bold text-ink">{t("freestyleTitle")}</h1>
               <LangToggle />
             </div>
-            <p className="eyebrow mt-0.5">tap a muscle → pick the machine → beat last time</p>
+            <p className="eyebrow mt-0.5">{t("freestyleHint")}</p>
           </div>
           <div className="text-right">
             <div className="tnum text-2xl font-bold text-cyan text-glow-cyan">
               {fmtVolume(volume)}
               <span className="ml-1 text-xs font-normal text-faint">{BRAND.unit}</span>
             </div>
-            <p className="eyebrow">{doneSets} sets</p>
+            <p className="eyebrow">{doneSets} {t("sets")}</p>
           </div>
         </div>
       </div>
@@ -113,8 +116,8 @@ export default function FreestylePage() {
 
       {/* Picker */}
       <section className="panel p-4">
-        <h2 className="eyebrow mb-1">哪个部位？</h2>
-        <p className="mb-2 text-[0.72rem] text-faint">Tap the body — or a chip below.</p>
+        <h2 className="eyebrow mb-1">{t("whichMuscle")}</h2>
+        <p className="mb-2 text-[0.72rem] text-faint">{t("tapBody")}</p>
         <BodyHeatmap
           data={muscles.map((m) => ({ muscle: m, volume: 0 }))}
           onPick={(m) => muscles.includes(m) && setMuscle(m === muscle ? null : m)}
@@ -129,7 +132,7 @@ export default function FreestylePage() {
                 muscle === m ? "border-laser bg-laser/15 text-laser" : "border-line text-muted"
               }`}
             >
-              {m}
+              {muscleName(m)}
             </button>
           ))}
         </div>
@@ -171,10 +174,10 @@ export default function FreestylePage() {
                       </span>
                       <span className="tnum shrink-0 text-right text-[0.7rem] text-laser-soft">
                         {last
-                          ? `上次 ${last.weight != null ? `${last.weight}${BRAND.unit}` : "BW"}${
+                          ? `${t("last")} ${last.weight != null ? `${last.weight}${BRAND.unit}` : "BW"}${
                               last.reps != null ? `×${last.reps}` : ""
                             }`
-                          : "首练"}
+                          : t("firstTime")}
                       </span>
                     </button>
                   </li>
@@ -190,7 +193,7 @@ export default function FreestylePage() {
         disabled={doneSets === 0}
         className="tap mt-1 w-full rounded-xl border border-cyan/50 bg-cyan/[0.08] py-3.5 text-sm font-bold uppercase tracking-wider text-cyan transition active:scale-[0.98] disabled:opacity-40"
       >
-        Finish session →
+        {t("finishSession")}
       </button>
     </div>
   );
@@ -213,6 +216,7 @@ function FreestyleCard({
   const [reps, setReps] = useState<number | undefined>(undefined);
   const [flash, setFlash] = useState(false);
   const lang = useNameLang();
+  const t = useT();
   const names = exerciseNames(exercise, lang);
 
   const logs =
@@ -242,7 +246,7 @@ function FreestyleCard({
     const cr = r ?? 0;
     if (cr > lr) return { sign: "up", label: `▲ +${cr - lr} rep${cr - lr > 1 ? "s" : ""}` };
     if (cr < lr) return { sign: "down", label: `▼ ${cr - lr} reps` };
-    return { sign: "flat", label: "▬ same" };
+    return { sign: "flat", label: t("same") };
   }
 
   async function logSet() {
@@ -274,18 +278,18 @@ function FreestyleCard({
         </div>
         {logs.length === 0 ? (
           <button onClick={onRemoveEmpty} className="text-[0.7rem] text-faint hover:text-danger">
-            remove
+            {t("remove")}
           </button>
         ) : null}
       </header>
 
       {last ? (
         <p className="tnum mt-2 text-[0.75rem] text-laser-soft">
-          上次: {last.weight != null ? `${last.weight}${BRAND.unit} × ` : ""}
-          {last.reps ?? "—"} · 今天目标：比它多一点
+          {t("last")}: {last.weight != null ? `${last.weight}${BRAND.unit} × ` : ""}
+          {last.reps ?? "—"} · {t("beatIt")}
         </p>
       ) : (
-        <p className="mt-2 text-[0.75rem] text-faint">首次记录 — 打好基准。</p>
+        <p className="mt-2 text-[0.75rem] text-faint">{t("firstRecord")}</p>
       )}
 
       {/* logged sets with progress deltas */}
@@ -296,7 +300,7 @@ function FreestyleCard({
             key={l.id}
             className="mt-2 flex items-center justify-between rounded-xl border border-go/40 bg-go/[0.06] px-3 py-2"
           >
-            <span className="eyebrow text-faint">Set {l.setNumber}</span>
+            <span className="eyebrow text-faint">{t("set")} {l.setNumber}{t("setUnit")}</span>
             <span className="tnum text-sm font-semibold text-ink">
               {l.weight != null ? `${l.weight}${BRAND.unit} × ` : ""}
               {l.reps}
@@ -319,7 +323,7 @@ function FreestyleCard({
       <div className="mt-3 rounded-xl border border-line bg-abyss/60 p-3">
         {exercise.isWeighted ? (
           <WeightControl
-            label={`Weight (${BRAND.unit})`}
+            label={`${t("weight")} (${BRAND.unit})`}
             value={weight}
             placeholder={prefillW}
             onChange={setWeight}
@@ -327,14 +331,14 @@ function FreestyleCard({
           />
         ) : null}
         <div className={`flex justify-center ${exercise.isWeighted ? "mt-3" : ""}`}>
-          <Stepper label="Reps" value={reps} placeholder={prefillR} onChange={setReps} step={1} accent="cyan" />
+          <Stepper label={t("reps")} value={reps} placeholder={prefillR} onChange={setReps} step={1} accent="cyan" />
         </div>
         <button
           type="button"
           onClick={logSet}
           className="tap mt-3 w-full rounded-xl bg-laser py-3 text-sm font-bold uppercase tracking-wider text-black transition active:scale-[0.98] glow-laser"
         >
-          Log set {logs.length + 1}
+          {t("logSet")} {logs.length + 1}
         </button>
       </div>
     </section>

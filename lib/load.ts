@@ -35,11 +35,38 @@ export interface LoadSummary {
   sessionsIn28d: number;
 }
 
-export const ZONE_META: Record<LoadZone, { label: string; color: string; hint: string }> = {
-  fresh: { label: "Fresh", color: "#8b96ad", hint: "Room to push — load is below your recent baseline." },
-  optimal: { label: "Optimal", color: "#34d399", hint: "Productive range. Keep stacking quality sessions." },
-  high: { label: "High", color: "#fbbf24", hint: "Loading fast — watch recovery markers this week." },
-  spike: { label: "Spike", color: "#f87171", hint: "Acute load is spiking vs. your baseline. Ease off or prioritize recovery." },
+export const ZONE_META: Record<
+  LoadZone,
+  { label: string; labelZh: string; color: string; hint: string; hintZh: string }
+> = {
+  fresh: {
+    label: "Fresh",
+    labelZh: "恢复",
+    color: "#8b96ad",
+    hint: "Room to push — load is below your recent baseline.",
+    hintZh: "还有余量 — 当前负荷低于近期基线，可以加把劲。",
+  },
+  optimal: {
+    label: "Optimal",
+    labelZh: "最佳",
+    color: "#34d399",
+    hint: "Productive range. Keep stacking quality sessions.",
+    hintZh: "高效区间。保持节奏，继续积累高质量训练。",
+  },
+  high: {
+    label: "High",
+    labelZh: "偏高",
+    color: "#fbbf24",
+    hint: "Loading fast — watch recovery markers this week.",
+    hintZh: "负荷上升较快 — 本周留意恢复信号。",
+  },
+  spike: {
+    label: "Spike",
+    labelZh: "飙升",
+    color: "#f87171",
+    hint: "Acute load is spiking vs. your baseline. Ease off or prioritize recovery.",
+    hintZh: "急性负荷相对基线飙升。放缓一点，优先恢复。",
+  },
 };
 
 export function zoneFor(acr: number): LoadZone {

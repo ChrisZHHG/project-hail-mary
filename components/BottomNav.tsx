@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT, type I18nKey } from "@/lib/i18n";
 
-type Tab = { href: string; label: string; icon: React.ReactNode; match: (p: string) => boolean };
+type Tab = { href: string; label: I18nKey; icon: React.ReactNode; match: (p: string) => boolean };
 
 const TABS: Tab[] = [
   {
     href: "/",
-    label: "Today",
+    label: "navToday",
     // /method lives under Today now (teaser card links there); Lookup took its tab.
     match: (p) => p === "/" || p === "/readiness" || p === "/method" || p === "/coach" || p === "/import",
     icon: (
@@ -20,7 +21,7 @@ const TABS: Tab[] = [
   },
   {
     href: "/train",
-    label: "Train",
+    label: "navTrain",
     match: (p) => p === "/train" || p.startsWith("/session"),
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
@@ -30,7 +31,7 @@ const TABS: Tab[] = [
   },
   {
     href: "/lookup",
-    label: "Lookup",
+    label: "navLookup",
     match: (p) => p === "/lookup",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
@@ -42,7 +43,7 @@ const TABS: Tab[] = [
   },
   {
     href: "/progress",
-    label: "Progress",
+    label: "navProgress",
     match: (p) => p === "/progress",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
@@ -55,6 +56,7 @@ const TABS: Tab[] = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const t = useT();
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-void/85 backdrop-blur-md"
@@ -73,7 +75,7 @@ export default function BottomNav() {
               }`}
             >
               <span className={active ? "animate-pop" : ""}>{tab.icon}</span>
-              {tab.label}
+              {t(tab.label)}
             </Link>
           );
         })}

@@ -11,12 +11,13 @@ import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import type { ExerciseInstance, WorkoutSection } from "@/lib/data/types";
 import { PRE_WORKOUT_PROTOCOL } from "@/lib/theory";
+import { useT, type I18nKey } from "@/lib/i18n";
 import ExecutionCard from "./ExecutionCard";
 
-const SECTION_LABEL: Record<WorkoutSection, string> = {
-  warmup: "Warm-up / Mobility",
-  main: "Work",
-  cardio: "Cardio",
+const SECTION_LABEL: Record<WorkoutSection, I18nKey> = {
+  warmup: "warmup",
+  main: "work",
+  cardio: "cardio",
 };
 const SECTION_ORDER: WorkoutSection[] = ["warmup", "main", "cardio"];
 
@@ -28,6 +29,7 @@ const fmtDay = (iso: string) => {
 };
 
 export default function SessionView({ workoutId }: { workoutId: string }) {
+  const t = useT();
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const workout = useWorkout(workoutId);
@@ -64,7 +66,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
   }
 
   if (!workout || !instances || !sessionId) {
-    return <p className="mt-10 text-center text-faint">Calibrating…</p>;
+    return <p className="mt-10 text-center text-faint">{t("calibrating")}</p>;
   }
 
   return (
@@ -84,7 +86,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
               {fmtVolume(volume)}
               <span className="ml-1 text-xs font-normal text-faint">{BRAND.unit}</span>
             </div>
-            <p className="eyebrow">{doneSets} sets logged</p>
+            <p className="eyebrow">{doneSets} {t("setsLogged")}</p>
           </div>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-elevated">
@@ -98,15 +100,15 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
       {SECTION_ORDER.map((section) =>
         grouped[section].length ? (
           <div key={section} className="flex flex-col gap-3">
-            <h2 className="eyebrow px-1">{SECTION_LABEL[section]}</h2>
+            <h2 className="eyebrow px-1">{t(SECTION_LABEL[section])}</h2>
             {section === "warmup" && PRE_WORKOUT_PROTOCOL.length ? (
               <Link
                 href={`/method#${PRE_WORKOUT_PROTOCOL[0].id}`}
                 className="flex items-center justify-between rounded-xl border border-cyan/25 bg-cyan/[0.04] px-4 py-2.5 transition active:scale-[0.99]"
               >
                 <span className="text-[0.78rem] text-muted">
-                  <span className="font-semibold text-cyan">Shoulder protocol</span> — do before
-                  training · {PRE_WORKOUT_PROTOCOL.length} drills
+                  <span className="font-semibold text-cyan">{t("shoulderProtocol")}</span> —{" "}
+                  {t("doBefore")} · {PRE_WORKOUT_PROTOCOL.length} {t("drills")}
                 </span>
                 <span className="text-cyan">📖</span>
               </Link>
@@ -123,7 +125,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
         onClick={finish}
         className="tap mt-2 w-full rounded-xl border border-cyan/50 bg-cyan/[0.08] py-3.5 text-sm font-bold uppercase tracking-wider text-cyan transition active:scale-[0.98]"
       >
-        Finish session →
+        {t("finishSession")}
       </button>
     </div>
   );

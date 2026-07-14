@@ -7,6 +7,7 @@ import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
 import { BRAND } from "@/lib/brand";
 import { exerciseNames, useNameLang } from "@/lib/prefs";
+import { useT, useMuscleName } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 import ExerciseIcon from "@/components/ExerciseIcon";
 
@@ -14,6 +15,8 @@ import ExerciseIcon from "@/components/ExerciseIcon";
  *  Search by name or tap a muscle-group chip → last top set + recent history,
  *  no date spelunking. */
 export default function LookupPage() {
+  const t = useT();
+  const muscleName = useMuscleName();
   const [query, setQuery] = useState("");
   const [muscle, setMuscle] = useState<string | null>(null);
 
@@ -28,7 +31,7 @@ export default function LookupPage() {
     return buildExerciseMemory(exercises, wexs, logs, dates);
   }, [exercises, wexs, logs, sessions]);
 
-  if (!memories) return <p className="mt-10 text-center text-faint">Loading…</p>;
+  if (!memories) return <p className="mt-10 text-center text-faint">{t("loading")}</p>;
 
   const muscles = [...new Set(memories.map((m) => m.exercise.targetMuscle))];
   const q = query.trim().toLowerCase();
@@ -47,8 +50,8 @@ export default function LookupPage() {
     <div className="flex flex-col gap-4">
       <header className="flex items-end justify-between pt-2">
         <div>
-          <p className="eyebrow">Memory</p>
-          <h1 className="mt-1 text-2xl font-bold text-ink">Last time on…</h1>
+          <p className="eyebrow">{t("memory")}</p>
+          <h1 className="mt-1 text-2xl font-bold text-ink">{t("lastTimeOn")}</h1>
         </div>
         <LangToggle />
       </header>
@@ -57,7 +60,7 @@ export default function LookupPage() {
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search a machine or movement…"
+        placeholder={t("searchPlaceholder")}
         className="w-full rounded-xl border border-line bg-elevated px-4 py-3 text-base text-ink placeholder:text-faint focus:border-cyan focus:outline-none"
       />
 
@@ -74,14 +77,14 @@ export default function LookupPage() {
                   : "border-line text-muted hover:border-cyan/50"
               }`}
             >
-              {m}
+              {muscleName(m)}
             </button>
           );
         })}
       </div>
 
       {visible.length === 0 ? (
-        <p className="mt-8 text-center text-sm text-faint">No matches.</p>
+        <p className="mt-8 text-center text-sm text-faint">{t("noMatches")}</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {visible.map((m) => (
@@ -97,6 +100,8 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
   const [open, setOpen] = useState(false);
   const { exercise, last, recent, totalSets } = m;
   const lang = useNameLang();
+  const t = useT();
+  const muscleName = useMuscleName();
   const names = exerciseNames(exercise, lang);
   return (
     <li className="panel p-4">
@@ -110,7 +115,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
             {names.secondary ? (
               <p className="truncate text-[0.62rem] text-faint">{names.secondary}</p>
             ) : null}
-            <p className="eyebrow mt-0.5">{exercise.targetMuscle}</p>
+            <p className="eyebrow mt-0.5">{muscleName(exercise.targetMuscle)}</p>
           </div>
           {last ? (
             <div className="shrink-0 text-right">
@@ -125,13 +130,13 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
               </p>
             </div>
           ) : (
-            <p className="shrink-0 text-[0.7rem] uppercase tracking-wider text-faint">no history</p>
+            <p className="shrink-0 text-[0.7rem] uppercase tracking-wider text-faint">{t("noHistory")}</p>
           )}
         </div>
       </button>
       {open && recent.length > 0 ? (
         <div className="mt-3 border-t border-line pt-2">
-          <p className="eyebrow mb-1.5">Recent sessions (top set)</p>
+          <p className="eyebrow mb-1.5">{t("recentSessions")}</p>
           <ul className="flex flex-col gap-1">
             {recent.map((r, i) => (
               <li key={i} className="tnum flex justify-between text-[0.8rem] text-muted">
@@ -146,7 +151,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
             ))}
           </ul>
           <p className="mt-1.5 text-[0.65rem] text-faint">
-            {totalSets} sets all-time{recent.some((r) => r.estimated) ? " · ~ = reconstructed from your described routine" : ""}
+            {totalSets} {t("setsAllTime")}{recent.some((r) => r.estimated) ? ` · ${t("reconstructedNote")}` : ""}
           </p>
         </div>
       ) : null}

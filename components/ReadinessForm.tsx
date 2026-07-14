@@ -9,9 +9,13 @@ import {
   SORE_AREAS,
   scoreReadiness,
   LEVEL_META,
+  REC_ZH,
+  REC_ZH_JOINT,
   type ReadinessExtras,
   type ReadinessInput,
 } from "@/lib/data/readiness";
+import { useT, useMuscleName } from "@/lib/i18n";
+import { useNameLang } from "@/lib/prefs";
 
 const DEFAULTS: ReadinessInput = {
   energy: 3,
@@ -30,6 +34,9 @@ const EXTRA_DEFAULTS: ReadinessExtras = {
 };
 
 export default function ReadinessForm() {
+  const t = useT();
+  const lang = useNameLang();
+  const muscleName = useMuscleName();
   const router = useRouter();
   const existing = useWeeklyReadiness();
   const [values, setValues] = useState<ReadinessInput>(DEFAULTS);
@@ -96,23 +103,29 @@ export default function ReadinessForm() {
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
-        <p className="eyebrow">Weekly · systems check</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">How was your week?</h1>
-        <p className="mt-2 text-[0.85rem] leading-snug text-muted">
-          Done on the weekend. Sets next week&apos;s volume — your coach adjusts the plan from this.
-        </p>
+        <p className="eyebrow">{t("weeklySystems")}</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">{t("howWasWeek")}</h1>
+        <p className="mt-2 text-[0.85rem] leading-snug text-muted">{t("readinessDone")}</p>
       </header>
 
       {/* Live score */}
       <div className={`panel border-l-2 p-4 ${meta.ring}`}>
         <div className="flex items-center justify-between">
-          <p className={`text-sm font-bold ${meta.color}`}>{meta.label}</p>
+          <p className={`text-sm font-bold ${meta.color}`}>
+            {lang === "zh" ? meta.labelZh : meta.label}
+          </p>
           <div className="tnum text-3xl font-bold text-ink">
             {preview.totalScore}
             <span className="text-base text-faint">/100</span>
           </div>
         </div>
-        <p className="mt-2 text-[0.85rem] leading-snug text-muted">{preview.recommendation}</p>
+        <p className="mt-2 text-[0.85rem] leading-snug text-muted">
+          {lang === "zh"
+            ? effective.jointPain > 3
+              ? REC_ZH_JOINT
+              : REC_ZH[preview.level]
+            : preview.recommendation}
+        </p>
       </div>
 
       {/* Sliders */}
@@ -123,7 +136,7 @@ export default function ReadinessForm() {
             <div key={m.key} className="panel p-4">
               <div className="flex items-center justify-between">
                 <label htmlFor={`sl-${m.key}`} className="text-sm font-semibold text-ink">
-                  {m.label}
+                  {lang === "zh" ? m.labelZh : m.label}
                 </label>
                 <span className="tnum text-xl font-bold text-laser">{v}</span>
               </div>
@@ -138,8 +151,8 @@ export default function ReadinessForm() {
                 className={`sl mt-3 ${m.invert ? "cyan" : ""}`}
               />
               <div className="mt-1.5 flex justify-between text-[0.65rem] uppercase tracking-wider text-faint">
-                <span>{m.low}</span>
-                <span>{m.high}</span>
+                <span>{lang === "zh" ? m.lowZh : m.low}</span>
+                <span>{lang === "zh" ? m.highZh : m.high}</span>
               </div>
             </div>
           );
@@ -148,10 +161,8 @@ export default function ReadinessForm() {
 
       {/* Where are you sore? — the way the coach actually asks */}
       <section className="panel p-4">
-        <p className="text-sm font-semibold text-ink">Where are you sore?</p>
-        <p className="mt-0.5 text-[0.75rem] text-muted">
-          Tap an area, then rate it 0–10 — &ldquo;lats, about 1 out of 10&rdquo;.
-        </p>
+        <p className="text-sm font-semibold text-ink">{t("whereSore")}</p>
+        <p className="mt-0.5 text-[0.75rem] text-muted">{t("tapArea")}</p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {SORE_AREAS.map((area) => {
             const on = area in soreMap;
@@ -166,7 +177,7 @@ export default function ReadinessForm() {
                     : "border-line text-muted hover:border-cyan/50"
                 }`}
               >
-                {area}
+                {muscleName(area)}
                 {on ? <span className="tnum ml-1.5">{soreMap[area]}</span> : null}
               </button>
             );
@@ -177,7 +188,7 @@ export default function ReadinessForm() {
             {Object.entries(soreMap).map(([area, intensity]) => (
               <div key={area}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[0.8rem] font-medium text-ink">{area}</span>
+                  <span className="text-[0.8rem] font-medium text-ink">{muscleName(area)}</span>
                   <span className="tnum text-base font-bold text-laser">{intensity}/10</span>
                 </div>
                 <input
@@ -203,7 +214,7 @@ export default function ReadinessForm() {
         <div>
           <div className="flex items-center justify-between">
             <label htmlFor="sleep-hours" className="text-sm font-semibold text-ink">
-              Average sleep
+              {t("avgSleep")}
             </label>
             <span className="tnum text-xl font-bold text-laser">
               {effectiveExtras.sleepHours != null ? `${effectiveExtras.sleepHours}h` : "—"}
@@ -221,7 +232,7 @@ export default function ReadinessForm() {
           />
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-ink">Hitting your protein?</p>
+          <p className="text-sm font-semibold text-ink">{t("hitProtein")}</p>
           <div className="flex gap-1.5">
             {([true, false] as const).map((val) => {
               const on = effectiveExtras.proteinTaken === val;
@@ -238,7 +249,7 @@ export default function ReadinessForm() {
                       : "border-line text-muted"
                   }`}
                 >
-                  {val ? "Yes" : "Not quite"}
+                  {val ? t("yes") : t("notQuite")}
                 </button>
               );
             })}
@@ -249,13 +260,13 @@ export default function ReadinessForm() {
       {/* Note to coach */}
       <section className="panel p-4">
         <label htmlFor="coach-note" className="text-sm font-semibold text-ink">
-          Anything your coach should know?
+          {t("coachNote")}
         </label>
         <textarea
           id="coach-note"
           value={effectiveExtras.noteToCoach ?? ""}
           onChange={(e) => setExtra("noteToCoach", e.target.value)}
-          placeholder="e.g. neck stiffness almost gone, right knee clicked on leg press…"
+          placeholder={t("notePlaceholder")}
           rows={3}
           className="mt-2 w-full resize-none rounded-xl border border-line bg-elevated px-3 py-2.5 text-[0.9rem] text-ink placeholder:text-faint focus:border-cyan focus:outline-none"
         />
@@ -267,7 +278,7 @@ export default function ReadinessForm() {
         disabled={saving}
         className="tap w-full rounded-xl bg-laser py-3.5 text-sm font-bold uppercase tracking-wider text-black transition active:scale-[0.98] disabled:opacity-60 glow-laser"
       >
-        {existing ? "Update this week" : "Save weekly check-in"}
+        {existing ? t("updateWeek") : t("saveCheckin")}
       </button>
     </div>
   );

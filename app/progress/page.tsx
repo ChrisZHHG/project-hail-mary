@@ -10,6 +10,7 @@ import MuscleLoad from "@/components/MuscleLoad";
 import BodyHeatmap from "@/components/BodyHeatmap";
 import LoadGauge from "@/components/LoadGauge";
 import { WEEKDAY_SHORT } from "@/lib/dates";
+import { useT } from "@/lib/i18n";
 
 const shortDate = (d: string) => d.slice(5).replace("-", "/");
 const dayLabel = (d: string) => {
@@ -24,6 +25,7 @@ const fmtDur = (sec?: number) => {
 };
 
 export default function ProgressPage() {
+  const t = useT();
   const sessions = useLiveQuery(
     () =>
       db.sessions
@@ -38,7 +40,7 @@ export default function ProgressPage() {
   const workouts = useLiveQuery(() => db.workouts.toArray(), []);
 
   if (!sessions || !logs || !wexs || !exercises || !workouts) {
-    return <p className="mt-10 text-center text-faint">Loading…</p>;
+    return <p className="mt-10 text-center text-faint">{t("loading")}</p>;
   }
 
   // Tonnage per session — in-app set logs, or the watch-reported volume (kg→lbs).
@@ -80,12 +82,12 @@ export default function ProgressPage() {
   if (sessions.length === 0) {
     return (
       <div className="mt-16 flex flex-col items-center gap-4 text-center">
-        <p className="text-faint">No completed sessions yet.</p>
+        <p className="text-faint">{t("noCompleted")}</p>
         <Link
           href="/train"
           className="rounded-xl bg-laser px-5 py-3 text-sm font-bold uppercase tracking-wider text-black glow-laser"
         >
-          Start training
+          {t("startTrainingCta")}
         </Link>
       </div>
     );
@@ -96,25 +98,25 @@ export default function ProgressPage() {
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
-        <p className="eyebrow">Telemetry</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">Progress</h1>
+        <p className="eyebrow">{t("telemetry")}</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">{t("progressTitle")}</h1>
       </header>
 
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Sessions" value={String(sessions.length)} unit={`${strength.length} strength`} />
-        <Stat label="Tracked vol." value={`${fmtVolume(total)}`} unit={BRAND.unit} />
-        <Stat label="Best session" value={`${fmtVolume(best)}`} unit={BRAND.unit} />
+        <Stat label={t("sessionsStat")} value={String(sessions.length)} unit={`${strength.length} ${t("strengthCount")}`} />
+        <Stat label={t("trackedVol")} value={`${fmtVolume(total)}`} unit={BRAND.unit} />
+        <Stat label={t("bestSession")} value={`${fmtVolume(best)}`} unit={BRAND.unit} />
       </div>
 
       <section className="panel p-4">
-        <h2 className="eyebrow mb-3">Volume per session</h2>
+        <h2 className="eyebrow mb-3">{t("volumePerSession")}</h2>
         <VolumeTrend points={points} />
       </section>
 
       <LoadGauge sessions={sessions} />
 
       <section className="panel p-4">
-        <h2 className="eyebrow mb-3">Muscle load — all time</h2>
+        <h2 className="eyebrow mb-3">{t("muscleLoadAllTime")}</h2>
         <BodyHeatmap data={muscleData} />
         <div className="mt-4 border-t border-line pt-4">
           <MuscleLoad data={muscleData} />
@@ -122,7 +124,7 @@ export default function ProgressPage() {
       </section>
 
       <section className="panel p-4">
-        <h2 className="eyebrow mb-3">History</h2>
+        <h2 className="eyebrow mb-3">{t("historyTitle")}</h2>
         <ul className="flex flex-col divide-y divide-line">
           {recent.map((s) => {
             const sessionLogs = logs.filter((l) => l.sessionId === s.id);
@@ -131,7 +133,7 @@ export default function ProgressPage() {
             const approx = !s.importedVolumeKg && sessionLogs.some((l) => l.estimated);
             const name =
               (s.workoutId && woById.get(s.workoutId)?.name) ||
-              (s.kind === "cardio" ? "Cardio" : "Strength");
+              (s.kind === "cardio" ? t("cardioLabel") : t("strengthLabel"));
             return (
               <li key={s.id} className="flex items-baseline justify-between gap-2 py-2 text-sm">
                 <div className="min-w-0">

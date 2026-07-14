@@ -6,11 +6,13 @@ import { db } from "@/lib/data/db";
 import { parseWatchRows, toSession, watchSessionId } from "@/lib/data/watchCsv";
 import { fmtDayLong } from "@/lib/dates";
 import { downloadBackup, restoreBackup } from "@/lib/backup";
+import { useT } from "@/lib/i18n";
 
 /** Manual bridge for watch data until a real HealthKit integration exists:
  *  paste rows from the workout export (tab- or comma-separated), preview the
  *  parse, commit. Stable ids make re-imports no-ops. */
 export default function ImportPage() {
+  const t = useT();
   const router = useRouter();
   const [text, setText] = useState("");
   const [done, setDone] = useState<number | null>(null);
@@ -34,12 +36,9 @@ export default function ImportPage() {
   return (
     <div className="flex flex-col gap-4">
       <header className="pt-2">
-        <p className="eyebrow">Data bridge</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">Import watch history</h1>
-        <p className="mt-2 text-[0.85rem] leading-snug text-muted">
-          Paste rows from your watch export — date, time, type, duration, kcal, volume, avg HR.
-          Re-importing the same rows is safe (they overwrite themselves).
-        </p>
+        <p className="eyebrow">{t("dataBridge")}</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">{t("importTitle")}</h1>
+        <p className="mt-2 text-[0.85rem] leading-snug text-muted">{t("importBody")}</p>
       </header>
 
       <textarea
@@ -52,7 +51,9 @@ export default function ImportPage() {
 
       {rows.length > 0 ? (
         <section className="panel p-4">
-          <h2 className="eyebrow mb-2">Parsed {rows.length} workout{rows.length === 1 ? "" : "s"}</h2>
+          <h2 className="eyebrow mb-2">
+            {rows.length === 1 ? t("parsedOne") : t("parsedMany").replace("{n}", String(rows.length))}
+          </h2>
           <ul className="flex flex-col divide-y divide-line">
             {rows.map((r) => (
               <li key={watchSessionId(r)} className="flex items-baseline justify-between gap-2 py-1.5 text-[0.75rem]">
@@ -62,7 +63,7 @@ export default function ImportPage() {
                   <span className={`ml-1.5 rounded border px-1 text-[0.55rem] uppercase tracking-wider ${
                     r.kind === "strength" ? "border-laser/40 text-laser" : "border-cyan/40 text-cyan"
                   }`}>
-                    {r.kind}
+                    {r.kind === "strength" ? t("strengthLabel") : t("cardioLabel")}
                   </span>
                 </span>
                 <span className="tnum shrink-0 text-right text-faint">
@@ -75,7 +76,7 @@ export default function ImportPage() {
           </ul>
         </section>
       ) : text.trim() ? (
-        <p className="text-center text-sm text-warn">Nothing parseable yet — check the format.</p>
+        <p className="text-center text-sm text-warn">{t("nothingParsed")}</p>
       ) : null}
 
       <button
@@ -84,12 +85,14 @@ export default function ImportPage() {
         disabled={rows.length === 0 || done != null}
         className="tap w-full rounded-xl bg-laser py-3.5 text-sm font-bold uppercase tracking-wider text-black transition active:scale-[0.98] disabled:opacity-40 glow-laser"
       >
-        {done != null ? `Imported ${done} ✓` : `Import ${rows.length || ""} workout${rows.length === 1 ? "" : "s"}`}
+        {done != null
+          ? t("importedDone").replace("{n}", String(done))
+          : rows.length === 1
+            ? t("importOne")
+            : t("importMany").replace("{n}", String(rows.length || ""))}
       </button>
 
-      <p className="text-center text-[0.65rem] leading-relaxed text-faint">
-        Roadmap: automatic Apple Health sync via an iOS Shortcut posting here.
-      </p>
+      <p className="text-center text-[0.65rem] leading-relaxed text-faint">{t("roadmapNote")}</p>
 
       <BackupSection />
     </div>
@@ -98,40 +101,38 @@ export default function ImportPage() {
 
 /** Full-database backup/restore — the phone IS the database, so export often. */
 function BackupSection() {
+  const t = useT();
   const [status, setStatus] = useState<string | null>(null);
 
   async function onExport() {
     await downloadBackup();
-    setStatus("Backup downloaded ✓ — keep it in Files/iCloud.");
+    setStatus(t("backupDownloaded"));
   }
 
   async function onRestore(file: File) {
     try {
       const counts = await restoreBackup(await file.text());
       const total = Object.values(counts).reduce((a, b) => a + b, 0);
-      setStatus(`Restored ${total} rows ✓`);
+      setStatus(t("restoredRows").replace("{n}", String(total)));
     } catch (e) {
-      setStatus(`Restore failed: ${e instanceof Error ? e.message : "bad file"}`);
+      setStatus(`${t("restoreFailed")}${e instanceof Error ? e.message : t("badFile")}`);
     }
   }
 
   return (
     <section className="panel mt-2 p-4">
-      <h2 className="eyebrow mb-1">Backup · 数据保全</h2>
-      <p className="mb-3 text-[0.75rem] leading-snug text-muted">
-        All history lives on this phone. Export a backup regularly — iOS can evict
-        rarely-used PWA storage.
-      </p>
+      <h2 className="eyebrow mb-1">{t("backupSection")}</h2>
+      <p className="mb-3 text-[0.75rem] leading-snug text-muted">{t("backupBody")}</p>
       <div className="flex gap-2">
         <button
           type="button"
           onClick={onExport}
           className="tap flex-1 rounded-xl border border-cyan/50 bg-cyan/[0.08] py-3 text-sm font-bold uppercase tracking-wider text-cyan transition active:scale-[0.98]"
         >
-          Export backup
+          {t("exportBackup")}
         </button>
         <label className="tap flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-line py-3 text-sm font-bold uppercase tracking-wider text-muted transition hover:border-cyan/40">
-          Restore…
+          {t("restore")}
           <input
             type="file"
             accept="application/json,.json"

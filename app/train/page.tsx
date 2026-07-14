@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
 import { useWorkouts } from "@/lib/data/hooks";
+import { useT } from "@/lib/i18n";
 
 export default function TrainPage() {
+  const t = useT();
   const workouts = useWorkouts();
   const openSessions =
     useLiveQuery(
@@ -18,8 +20,8 @@ export default function TrainPage() {
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
-        <p className="eyebrow">Pick a day</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">Train</h1>
+        <p className="eyebrow">{t("pickDay")}</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">{t("trainTitle")}</h1>
       </header>
 
       <div className="flex flex-col gap-3">
@@ -36,7 +38,7 @@ export default function TrainPage() {
                   <h2 className="text-lg font-semibold text-ink">{w.name}</h2>
                   {active ? (
                     <span className="rounded-full border border-laser/50 px-2 py-0.5 text-[0.6rem] uppercase tracking-wider text-laser">
-                      in progress
+                      {t("inProgress")}
                     </span>
                   ) : null}
                 </div>
@@ -47,7 +49,7 @@ export default function TrainPage() {
           );
         })}
         {workouts && workouts.length === 0 ? (
-          <p className="text-center text-faint">No workouts seeded.</p>
+          <p className="text-center text-faint">{t("noWorkouts")}</p>
         ) : null}
 
         {/* Off-program training — pick machines by muscle + picture */}
@@ -57,14 +59,14 @@ export default function TrainPage() {
         >
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-cyan">Freestyle</h2>
+              <h2 className="text-lg font-semibold text-cyan">{t("freestyleTitle")}</h2>
               {freestyleActive ? (
                 <span className="rounded-full border border-laser/50 px-2 py-0.5 text-[0.6rem] uppercase tracking-wider text-laser">
-                  in progress
+                  {t("inProgress")}
                 </span>
               ) : null}
             </div>
-            <p className="eyebrow mt-1">自主训练 · 点部位选机器 · 比上次多一点</p>
+            <p className="eyebrow mt-1">{t("freestyleCardSub")}</p>
           </div>
           <span className="text-2xl text-cyan">→</span>
         </Link>
