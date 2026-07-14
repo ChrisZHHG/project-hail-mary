@@ -10,7 +10,7 @@ import {
 } from "@/lib/data/hooks";
 import { isWeekend } from "@/lib/data/repository";
 import { LEVEL_META } from "@/lib/data/readiness";
-import { PRINCIPLES } from "@/lib/principles";
+import { PRINCIPLES } from "@/lib/theory";
 import { sessionTonnageLbs, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
 import { fmtDayLong } from "@/lib/dates";
@@ -130,6 +130,22 @@ export default function Home() {
       <Link href="/train" className="text-center text-[0.8rem] uppercase tracking-wider text-faint hover:text-cyan">
         Choose another day
       </Link>
+
+      {/* Neck flag → corrective protocol */}
+      {(weekly?.soreMap?.["Neck"] ?? 0) > 0 ? (
+        <Link
+          href="/method#th-nose-to-armpit"
+          className="panel flex items-center justify-between border-l-2 border-warn/60 p-4 transition active:scale-[0.99]"
+        >
+          <div>
+            <p className="eyebrow text-warn">Neck flagged {weekly!.soreMap!["Neck"]}/10 this week</p>
+            <p className="mt-1 text-[0.85rem] text-muted">
+              Run the Shoulder Story protocol — 5 drills, before training.
+            </p>
+          </div>
+          <span className="text-xl">📖</span>
+        </Link>
+      ) : null}
 
       {/* Method teaser */}
       <Link href="/method" className="panel block p-4 transition active:scale-[0.99]">

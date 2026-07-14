@@ -8,7 +8,9 @@ import { repo, today } from "@/lib/data/repository";
 import { useExerciseInstances, useSessionLogs, useWorkout } from "@/lib/data/hooks";
 import { sumVolume, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
+import Link from "next/link";
 import type { ExerciseInstance, WorkoutSection } from "@/lib/data/types";
+import { PRE_WORKOUT_PROTOCOL } from "@/lib/theory";
 import ExecutionCard from "./ExecutionCard";
 
 const SECTION_LABEL: Record<WorkoutSection, string> = {
@@ -97,6 +99,18 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
         grouped[section].length ? (
           <div key={section} className="flex flex-col gap-3">
             <h2 className="eyebrow px-1">{SECTION_LABEL[section]}</h2>
+            {section === "warmup" && PRE_WORKOUT_PROTOCOL.length ? (
+              <Link
+                href={`/method#${PRE_WORKOUT_PROTOCOL[0].id}`}
+                className="flex items-center justify-between rounded-xl border border-cyan/25 bg-cyan/[0.04] px-4 py-2.5 transition active:scale-[0.99]"
+              >
+                <span className="text-[0.78rem] text-muted">
+                  <span className="font-semibold text-cyan">Shoulder protocol</span> — do before
+                  training · {PRE_WORKOUT_PROTOCOL.length} drills
+                </span>
+                <span className="text-cyan">📖</span>
+              </Link>
+            ) : null}
             {grouped[section].map((instance) => (
               <ExecutionCard key={instance.id} instance={instance} sessionId={sessionId} />
             ))}

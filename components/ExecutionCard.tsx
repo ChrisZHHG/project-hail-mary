@@ -5,7 +5,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
 import { repo } from "@/lib/data/repository";
 import { BRAND } from "@/lib/brand";
-import { methodTag } from "@/lib/principles";
+import Link from "next/link";
+import { methodTag, theoryForExercise } from "@/lib/theory";
 import type { ExerciseInstance, SetLog } from "@/lib/data/types";
 import Stepper from "./Stepper";
 import WeightControl from "./WeightControl";
@@ -33,6 +34,7 @@ export default function ExecutionCard({
   const showReps = !isCardio && repsNumeric;
   const showRir = !!instance.targetRir;
   const mTag = methodTag(exercise.name, exercise.category);
+  const relatedTheory = theoryForExercise(exercise.id, exercise.targetMuscle);
 
   const logs =
     useLiveQuery(
@@ -120,6 +122,15 @@ export default function ExecutionCard({
               <span className="rounded border border-cyan/40 px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-cyan">
                 {mTag}
               </span>
+            ) : null}
+            {relatedTheory.length ? (
+              <Link
+                href={`/method#${relatedTheory[0].id}`}
+                aria-label={`Theory: ${relatedTheory[0].title}`}
+                className="rounded border border-line px-1.5 py-0.5 text-[0.6rem] text-faint transition hover:border-cyan/40 hover:text-cyan"
+              >
+                📖{relatedTheory.length > 1 ? ` ${relatedTheory.length}` : ""}
+              </Link>
             ) : null}
           </div>
           <p className="eyebrow mt-1">
