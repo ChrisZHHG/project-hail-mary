@@ -8,6 +8,10 @@ export type WorkoutSection = "warmup" | "main" | "cardio";
 export interface Exercise {
   id: string;
   name: string;
+  /** Chinese name — Chris recognizes movements by 中文名 + picture, not English. */
+  aliasZh?: string;
+  /** Movement-pattern key → pictogram in components/ExerciseIcon.tsx. */
+  pattern?: string;
   /** Primary muscle group — drives the workload heatmap. */
   targetMuscle: string;
   category: ExerciseCategory;

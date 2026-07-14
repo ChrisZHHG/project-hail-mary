@@ -102,6 +102,14 @@ export class HailMaryDB extends Dexie {
         await tx.table("setLogs").bulkAdd(WATCH_SESSION_LOGS);
       });
 
+    /* v5 — visual recognition: exercises gain 中文名 (aliasZh) + pictogram
+     * pattern keys for the freestyle picker. Pure catalog refresh. */
+    this.version(5)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table("exercises").bulkPut(SEED_EXERCISES);
+      });
+
     this.on("populate", () => this.seed());
   }
 

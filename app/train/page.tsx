@@ -7,15 +7,13 @@ import { useWorkouts } from "@/lib/data/hooks";
 
 export default function TrainPage() {
   const workouts = useWorkouts();
-  const activeIds =
+  const openSessions =
     useLiveQuery(
-      () =>
-        db.sessions
-          .filter((s) => s.completedAt == null)
-          .toArray()
-          .then((rows) => rows.map((r) => r.workoutId)),
+      () => db.sessions.filter((s) => s.completedAt == null && s.source !== "watch").toArray(),
       []
     ) ?? [];
+  const activeIds = openSessions.map((r) => r.workoutId);
+  const freestyleActive = openSessions.some((s) => !s.workoutId);
 
   return (
     <div className="flex flex-col gap-5">
@@ -51,6 +49,25 @@ export default function TrainPage() {
         {workouts && workouts.length === 0 ? (
           <p className="text-center text-faint">No workouts seeded.</p>
         ) : null}
+
+        {/* Off-program training — pick machines by muscle + picture */}
+        <Link
+          href="/freestyle"
+          className="flex items-center justify-between rounded-card border border-cyan/40 bg-cyan/[0.06] p-4 transition active:scale-[0.99]"
+        >
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-cyan">Freestyle</h2>
+              {freestyleActive ? (
+                <span className="rounded-full border border-laser/50 px-2 py-0.5 text-[0.6rem] uppercase tracking-wider text-laser">
+                  in progress
+                </span>
+              ) : null}
+            </div>
+            <p className="eyebrow mt-1">自主训练 · 点部位选机器 · 比上次多一点</p>
+          </div>
+          <span className="text-2xl text-cyan">→</span>
+        </Link>
       </div>
     </div>
   );

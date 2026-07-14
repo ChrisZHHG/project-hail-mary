@@ -10,8 +10,18 @@ import {
 
 /** Front + back anatomical figures with muscle regions heated by relative
  *  tonnage. Cold = dim slate, warming through neon-cyan to laser-orange.
- *  Geometry lives in lib/musclePaths.ts (right-half paths, mirrored here). */
-export default function BodyHeatmap({ data }: { data: { muscle: string; volume: number }[] }) {
+ *  Geometry lives in lib/musclePaths.ts (right-half paths, mirrored here).
+ *  Pass `onPick` to use the figure as a tappable muscle picker (freestyle
+ *  logging); `selected` rings the active muscle. */
+export default function BodyHeatmap({
+  data,
+  onPick,
+  selected,
+}: {
+  data: { muscle: string; volume: number }[];
+  onPick?: (muscle: string) => void;
+  selected?: string | null;
+}) {
   const vol = new Map(data.map((d) => [d.muscle, d.volume]));
   const max = Math.max(1, ...data.map((d) => d.volume));
   const heat = (muscle: string) => {
@@ -40,21 +50,29 @@ export default function BodyHeatmap({ data }: { data: { muscle: string; volume: 
         </g>
       ))}
       {/* muscle regions */}
-      {regions.map((r, i) =>
-        r.midline ? (
-          <path key={i} d={r.d} fill={heat(r.muscle)} stroke="rgba(0,0,0,0.35)" strokeWidth="0.5">
+      {regions.map((r, i) => {
+        const isSel = selected === r.muscle;
+        const common = {
+          fill: heat(r.muscle),
+          stroke: isSel ? "#ff5e1a" : "rgba(0,0,0,0.35)",
+          strokeWidth: isSel ? 1.4 : 0.5,
+          onClick: onPick ? () => onPick(r.muscle) : undefined,
+          style: onPick ? ({ cursor: "pointer" } as const) : undefined,
+        };
+        return r.midline ? (
+          <path key={i} d={r.d} {...common}>
             <title>{r.muscle}</title>
           </path>
         ) : (
           [1, -1].map((sx) => (
             <g key={`${i}${sx}`} transform={`scale(${sx},1)`}>
-              <path d={r.d} fill={heat(r.muscle)} stroke="rgba(0,0,0,0.35)" strokeWidth="0.5">
+              <path d={r.d} {...common}>
                 <title>{r.muscle}</title>
               </path>
             </g>
           ))
-        )
-      )}
+        );
+      })}
       <text
         x="0"
         y="252"

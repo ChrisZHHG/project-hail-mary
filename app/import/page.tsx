@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { db } from "@/lib/data/db";
 import { parseWatchRows, toSession, watchSessionId } from "@/lib/data/watchCsv";
 import { fmtDayLong } from "@/lib/dates";
+import { downloadBackup, restoreBackup } from "@/lib/backup";
 
 /** Manual bridge for watch data until a real HealthKit integration exists:
  *  paste rows from the workout export (tab- or comma-separated), preview the
@@ -89,6 +90,61 @@ export default function ImportPage() {
       <p className="text-center text-[0.65rem] leading-relaxed text-faint">
         Roadmap: automatic Apple Health sync via an iOS Shortcut posting here.
       </p>
+
+      <BackupSection />
     </div>
+  );
+}
+
+/** Full-database backup/restore — the phone IS the database, so export often. */
+function BackupSection() {
+  const [status, setStatus] = useState<string | null>(null);
+
+  async function onExport() {
+    await downloadBackup();
+    setStatus("Backup downloaded ✓ — keep it in Files/iCloud.");
+  }
+
+  async function onRestore(file: File) {
+    try {
+      const counts = await restoreBackup(await file.text());
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      setStatus(`Restored ${total} rows ✓`);
+    } catch (e) {
+      setStatus(`Restore failed: ${e instanceof Error ? e.message : "bad file"}`);
+    }
+  }
+
+  return (
+    <section className="panel mt-2 p-4">
+      <h2 className="eyebrow mb-1">Backup · 数据保全</h2>
+      <p className="mb-3 text-[0.75rem] leading-snug text-muted">
+        All history lives on this phone. Export a backup regularly — iOS can evict
+        rarely-used PWA storage.
+      </p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onExport}
+          className="tap flex-1 rounded-xl border border-cyan/50 bg-cyan/[0.08] py-3 text-sm font-bold uppercase tracking-wider text-cyan transition active:scale-[0.98]"
+        >
+          Export backup
+        </button>
+        <label className="tap flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-line py-3 text-sm font-bold uppercase tracking-wider text-muted transition hover:border-cyan/40">
+          Restore…
+          <input
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onRestore(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
+      {status ? <p className="tnum mt-2 text-[0.75rem] text-cyan">{status}</p> : null}
+    </section>
   );
 }

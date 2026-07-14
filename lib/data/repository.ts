@@ -47,6 +47,8 @@ export interface Repository {
 
   getActiveSession(workoutId: string): Promise<Session | undefined>;
   startSession(workoutId: string): Promise<Session>;
+  /** Freestyle = a session with no program workout; sets log by exerciseId. */
+  startFreestyleSession(): Promise<Session>;
   completeSession(sessionId: string): Promise<void>;
   getSession(sessionId: string): Promise<Session | undefined>;
   getSetLogs(sessionId: string): Promise<SetLog[]>;
@@ -109,6 +111,24 @@ class DexieRepository implements Repository {
       workoutId,
       date: today(),
       startedAt: Date.now(),
+    };
+    await db.sessions.add(session);
+    return session;
+  }
+
+  async startFreestyleSession() {
+    // Resume today's open freestyle session if one exists (no workoutId index
+    // entry for these rows, so filter the small sessions table directly).
+    const existing = await db.sessions
+      .filter((s) => !s.workoutId && s.completedAt == null && s.source !== "watch")
+      .first();
+    if (existing) return existing;
+    const session: Session = {
+      id: uid(),
+      date: today(),
+      startedAt: Date.now(),
+      source: "app",
+      kind: "strength",
     };
     await db.sessions.add(session);
     return session;

@@ -15,6 +15,7 @@ import { sessionTonnageLbs, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
 import { fmtDayLong } from "@/lib/dates";
 import { downloadWorkoutIcs, nextOccurrence } from "@/lib/ics";
+import { daysSinceBackup } from "@/lib/backup";
 
 export default function Home() {
   const workouts = useWorkouts();
@@ -41,6 +42,14 @@ export default function Home() {
     const nextOrder = lastWo ? (lastWo.dayOrder + 1) % workouts.length : 0;
     return workouts.find((w) => w.dayOrder === nextOrder) ?? workouts[0];
   }, [workouts, lastProgramSession]);
+
+  // Backup nudge: never exported, or stale > 14 days (computed post-mount).
+  const [backupDue, setBackupDue] = useState<number | "never" | null>(null);
+  useEffect(() => {
+    const days = daysSinceBackup();
+    if (days == null) setBackupDue("never");
+    else if (days > 14) setBackupDue(days);
+  }, []);
 
   // Computed after mount (weekday math) to avoid hydration drift.
   const [nextDayLabel, setNextDayLabel] = useState("");
@@ -127,9 +136,15 @@ export default function Home() {
         <p className="text-faint">Loading your program…</p>
       )}
 
-      <Link href="/train" className="text-center text-[0.8rem] uppercase tracking-wider text-faint hover:text-cyan">
-        Choose another day
-      </Link>
+      <div className="flex items-center justify-center gap-4">
+        <Link href="/train" className="text-center text-[0.8rem] uppercase tracking-wider text-faint hover:text-cyan">
+          Choose another day
+        </Link>
+        <span className="text-faint">·</span>
+        <Link href="/freestyle" className="text-center text-[0.8rem] uppercase tracking-wider text-cyan">
+          Freestyle 自主练
+        </Link>
+      </div>
 
       {/* Neck flag → corrective protocol */}
       {(weekly?.soreMap?.["Neck"] ?? 0) > 0 ? (
@@ -188,6 +203,20 @@ export default function Home() {
             ) : null}
             <p className="eyebrow text-cyan">View progress →</p>
           </div>
+        </Link>
+      ) : null}
+
+      {/* Backup nudge — local-first means the phone IS the database */}
+      {backupDue ? (
+        <Link
+          href="/import"
+          className="panel flex items-center justify-between border-l-2 border-cyan/40 p-3.5 transition active:scale-[0.99]"
+        >
+          <p className="text-[0.8rem] text-muted">
+            <span className="font-semibold text-cyan">Back up your data</span> — no export in{" "}
+            {backupDue === "never" ? "…ever" : `${backupDue} days`}. Takes 5 seconds.
+          </p>
+          <span className="text-cyan">💾</span>
         </Link>
       ) : null}
 
