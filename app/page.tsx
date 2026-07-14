@@ -11,14 +11,10 @@ import {
 import { isWeekend } from "@/lib/data/repository";
 import { LEVEL_META } from "@/lib/data/readiness";
 import { PRINCIPLES } from "@/lib/principles";
-import { sumVolume, fmtVolume } from "@/lib/volume";
+import { sessionTonnageLbs, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
-
-const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const fmtDay = (iso: string) => {
-  const d = new Date(iso + "T00:00:00");
-  return `${WEEKDAY[d.getDay()]} · ${iso.slice(5).replace("-", "/")}`;
-};
+import { fmtDayLong } from "@/lib/dates";
+import { downloadWorkoutIcs, nextOccurrence } from "@/lib/ics";
 
 export default function Home() {
   const workouts = useWorkouts();
@@ -31,15 +27,32 @@ export default function Home() {
 
   const lastSession = completed?.[0];
   const lastVolume =
-    lastSession && allLogs ? sumVolume(allLogs.filter((l) => l.sessionId === lastSession.id)) : 0;
+    lastSession && allLogs
+      ? sessionTonnageLbs(lastSession, allLogs.filter((l) => l.sessionId === lastSession.id))
+      : 0;
 
+  // Rotation follows the last *program* session — watch imports (no workoutId,
+  // e.g. elliptical) must not reset the cycle to day 1.
+  const lastProgramSession = completed?.find((s) => s.workoutId);
   const nextWorkout = useMemo(() => {
     if (!workouts?.length) return undefined;
-    if (!lastSession) return workouts[0];
-    const lastWo = workouts.find((w) => w.id === lastSession.workoutId);
+    if (!lastProgramSession) return workouts[0];
+    const lastWo = workouts.find((w) => w.id === lastProgramSession.workoutId);
     const nextOrder = lastWo ? (lastWo.dayOrder + 1) % workouts.length : 0;
     return workouts.find((w) => w.dayOrder === nextOrder) ?? workouts[0];
-  }, [workouts, lastSession]);
+  }, [workouts, lastProgramSession]);
+
+  // Computed after mount (weekday math) to avoid hydration drift.
+  const [nextDayLabel, setNextDayLabel] = useState("");
+  useEffect(() => {
+    if (!nextWorkout) return;
+    const d = nextOccurrence(nextWorkout.id);
+    if (!d) return;
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+    setNextDayLabel(fmtDayLong(iso));
+  }, [nextWorkout]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -92,17 +105,24 @@ export default function Home() {
 
       {/* Primary start */}
       {nextWorkout ? (
-        <Link
-          href={`/session/${nextWorkout.id}`}
-          className="relative overflow-hidden rounded-card border border-laser/40 bg-laser/[0.08] p-5 transition active:scale-[0.99] glow-laser"
-        >
-          <p className="eyebrow text-laser-soft">Up next</p>
-          <h2 className="mt-1 text-2xl font-bold text-ink">{nextWorkout.name}</h2>
-          <p className="mt-0.5 text-sm text-muted">{nextWorkout.subtitle}</p>
-          <span className="mt-3 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-laser">
-            Start training →
-          </span>
-        </Link>
+        <div className="relative overflow-hidden rounded-card border border-laser/40 bg-laser/[0.08] glow-laser">
+          <Link href={`/session/${nextWorkout.id}`} className="block p-5 transition active:scale-[0.99]">
+            <p className="eyebrow text-laser-soft">Up next</p>
+            <h2 className="mt-1 text-2xl font-bold text-ink">{nextWorkout.name}</h2>
+            <p className="mt-0.5 text-sm text-muted">{nextWorkout.subtitle}</p>
+            <span className="mt-3 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-laser">
+              Start training →
+            </span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => downloadWorkoutIcs(nextWorkout)}
+            className="tap flex w-full items-center justify-between border-t border-laser/20 px-5 py-2.5 text-[0.7rem] font-semibold uppercase tracking-wider text-muted transition hover:text-cyan"
+          >
+            <span>Remind me{nextDayLabel ? ` · ${nextDayLabel}` : ""}</span>
+            <span className="text-cyan">+ Calendar</span>
+          </button>
+        </div>
       ) : (
         <p className="text-faint">Loading your program…</p>
       )}
@@ -135,16 +155,32 @@ export default function Home() {
         <Link href="/progress" className="panel flex items-center justify-between p-4">
           <div>
             <p className="eyebrow">Last session</p>
-            <p className="mt-1 text-sm text-muted">{fmtDay(lastSession.date)}</p>
+            <p className="mt-1 text-sm text-muted">
+              {fmtDayLong(lastSession.date)}
+              {lastSession.source === "watch" ? (
+                <span className="ml-1.5 rounded border border-line px-1 text-[0.55rem] uppercase tracking-wider text-faint">
+                  watch
+                </span>
+              ) : null}
+            </p>
           </div>
           <div className="text-right">
-            <div className="tnum text-xl font-bold text-cyan">
-              {fmtVolume(lastVolume)} <span className="text-xs font-normal text-faint">{BRAND.unit}</span>
-            </div>
+            {lastVolume > 0 ? (
+              <div className="tnum text-xl font-bold text-cyan">
+                {fmtVolume(lastVolume)} <span className="text-xs font-normal text-faint">{BRAND.unit}</span>
+              </div>
+            ) : null}
             <p className="eyebrow text-cyan">View progress →</p>
           </div>
         </Link>
       ) : null}
+
+      <Link
+        href="/coach"
+        className="pb-2 text-center text-[0.7rem] uppercase tracking-wider text-faint transition hover:text-cyan"
+      >
+        Coach view →
+      </Link>
     </div>
   );
 }

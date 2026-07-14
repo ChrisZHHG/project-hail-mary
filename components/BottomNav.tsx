@@ -9,7 +9,8 @@ const TABS: Tab[] = [
   {
     href: "/",
     label: "Today",
-    match: (p) => p === "/" || p === "/readiness",
+    // /method lives under Today now (teaser card links there); Lookup took its tab.
+    match: (p) => p === "/" || p === "/readiness" || p === "/method" || p === "/coach" || p === "/import",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
         <path d="M3 10.5 12 3l9 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -28,6 +29,18 @@ const TABS: Tab[] = [
     ),
   },
   {
+    href: "/lookup",
+    label: "Lookup",
+    match: (p) => p === "/lookup",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
+        <circle cx="10.5" cy="10.5" r="6" stroke="currentColor" strokeWidth="1.8" />
+        <path d="m15.5 15.5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M8 10.5h5M10.5 8v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/progress",
     label: "Progress",
     match: (p) => p === "/progress",
@@ -35,17 +48,6 @@ const TABS: Tab[] = [
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
         <path d="M4 19V5M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         <path d="M7.5 15l3.5-4 3 2.5 4.5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    href: "/method",
-    label: "Method",
-    match: (p) => p === "/method",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
-        <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15.5H5.5A1.5 1.5 0 0 0 4 21V5.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-        <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v15.5h5.5A1.5 1.5 0 0 1 20 21V5.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
       </svg>
     ),
   },

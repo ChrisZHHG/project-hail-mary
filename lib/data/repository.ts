@@ -1,6 +1,6 @@
 import Dexie from "dexie";
 import { db } from "./db";
-import { scoreReadiness, type ReadinessInput } from "./readiness";
+import { scoreReadiness, type ReadinessExtras, type ReadinessInput } from "./readiness";
 import type {
   ExerciseInstance,
   Program,
@@ -53,7 +53,7 @@ export interface Repository {
   upsertSet(log: Omit<SetLog, "id" | "timestamp"> & { id?: string }): Promise<SetLog>;
   deleteSet(id: string): Promise<void>;
 
-  saveReadiness(input: ReadinessInput): Promise<ReadinessCheck>;
+  saveReadiness(input: ReadinessInput & ReadinessExtras): Promise<ReadinessCheck>;
   getReadiness(date: string): Promise<ReadinessCheck | undefined>;
   getLatestReadiness(): Promise<ReadinessCheck | undefined>;
   /** The check-in for the current (Mon–Sun) week, if any. */
@@ -140,7 +140,7 @@ class DexieRepository implements Repository {
     await db.setLogs.delete(id);
   }
 
-  async saveReadiness(input: ReadinessInput) {
+  async saveReadiness(input: ReadinessInput & ReadinessExtras) {
     const { totalScore, level, recommendation } = scoreReadiness(input);
     const date = today();
     const existing = await db.readinessChecks.where("date").equals(date).first();

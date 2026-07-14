@@ -15,6 +15,7 @@ import {
   SEED_WORKOUT_EXERCISES,
   buildDemoHistory,
 } from "./seed";
+import { WATCH_SESSIONS } from "./watchHistory";
 
 /** IndexedDB store (local-first). The Repository layer is what the app talks to;
  *  this class is the storage detail that a Supabase adapter would replace. */
@@ -38,6 +39,44 @@ export class HailMaryDB extends Dexie {
       setLogs: "id, sessionId, workoutExerciseId, [workoutExerciseId+timestamp]",
       readinessChecks: "id, date, timestamp",
     });
+
+    /* v2 — program sync (coach's June 2026 update: RIR 0-1, FB1 layout change)
+     * + Apple Watch history backfill. Schema keypaths are unchanged; the
+     * version bump exists to run this one-shot upgrade on installed clients. */
+    this.version(2)
+      .stores({})
+      .upgrade(async (tx) => {
+        // 1. Refresh catalog / workouts by stable id (never touches user logs).
+        await tx.table("exercises").bulkPut(SEED_EXERCISES);
+        await tx.table("workouts").bulkPut(SEED_WORKOUTS);
+
+        // 2. Rebuild assignments (positional ids shifted in v2), then remap
+        //    existing setLogs old→new via (workoutId, exerciseId) identity so
+        //    prefill memory ("Last: 110×7") survives the layout change.
+        const weTable = tx.table("workoutExercises");
+        const oldWes = (await weTable.toArray()) as WorkoutExercise[];
+        const oldById = new Map(oldWes.map((w) => [w.id, w]));
+        await weTable.clear();
+        await weTable.bulkAdd(SEED_WORKOUT_EXERCISES);
+        const newIdByKey = new Map(
+          SEED_WORKOUT_EXERCISES.map((w) => [`${w.workoutId}|${w.exerciseId}`, w.id])
+        );
+        await tx
+          .table("setLogs")
+          .toCollection()
+          .modify((log: SetLog) => {
+            const old = oldById.get(log.workoutExerciseId);
+            if (!old) return; // already new-style or unknown — leave untouched
+            const next = newIdByKey.get(`${old.workoutId}|${old.exerciseId}`);
+            if (next) log.workoutExerciseId = next;
+            // No new home (movement dropped from the program): keep the old id;
+            // history stays queryable by exerciseId, it just isn't assigned.
+          });
+
+        // 3. Watch history backfill — stable ids make this idempotent.
+        await tx.table("sessions").bulkPut(WATCH_SESSIONS);
+      });
+
     this.on("populate", () => this.seed());
   }
 
@@ -48,7 +87,7 @@ export class HailMaryDB extends Dexie {
     await this.workouts.bulkAdd(SEED_WORKOUTS);
     await this.workoutExercises.bulkAdd(SEED_WORKOUT_EXERCISES);
     const demo = buildDemoHistory(now);
-    await this.sessions.bulkAdd([demo.session]);
+    await this.sessions.bulkAdd([demo.session, ...WATCH_SESSIONS]);
     await this.setLogs.bulkAdd(demo.logs);
   }
 }

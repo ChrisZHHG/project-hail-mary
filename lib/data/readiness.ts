@@ -9,6 +9,36 @@ export interface ReadinessInput {
   jointPain: number;
 }
 
+/** The way the coach actually asks ("any soreness? how's the neck?") —
+ *  optional detail on top of the six sliders. */
+export interface ReadinessExtras {
+  /** Sore area → 0-10 intensity ("lats 1/10"). Only touched areas are stored. */
+  soreMap?: Record<string, number>;
+  noteToCoach?: string;
+  sleepHours?: number;
+  proteinTaken?: boolean;
+}
+
+/** Areas the coach asks about. Finer-grained than targetMuscle on purpose
+ *  (e.g. "Lats" + "Upper back" vs the program's coarse "Back"). */
+export const SORE_AREAS = [
+  "Neck",
+  "Shoulders",
+  "Chest",
+  "Lats",
+  "Upper back",
+  "Lower back",
+  "Biceps",
+  "Triceps",
+  "Forearms",
+  "Core",
+  "Glutes",
+  "Quads",
+  "Hamstrings",
+  "Adductors",
+  "Calves",
+] as const;
+
 export const READINESS_METRICS = [
   { key: "energy", label: "Energy", invert: false, low: "Drained", high: "Wired" },
   { key: "sleep", label: "Sleep", invert: false, low: "Wrecked", high: "Rested" },

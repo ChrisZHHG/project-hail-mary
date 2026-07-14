@@ -3,13 +3,25 @@
 import Link from "next/link";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
-import { sumVolume, setVolume, fmtVolume } from "@/lib/volume";
+import { setVolume, sessionTonnageLbs, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
-import VolumeTrend from "@/components/VolumeTrend";
+import VolumeTrend, { type TrendPoint } from "@/components/VolumeTrend";
 import MuscleLoad from "@/components/MuscleLoad";
 import BodyHeatmap from "@/components/BodyHeatmap";
+import LoadGauge from "@/components/LoadGauge";
+import { WEEKDAY_SHORT } from "@/lib/dates";
 
 const shortDate = (d: string) => d.slice(5).replace("-", "/");
+const dayLabel = (d: string) => {
+  const wd = WEEKDAY_SHORT[new Date(`${d}T00:00:00`).getDay()];
+  return `${wd} · ${shortDate(d)}`;
+};
+const fmtDur = (sec?: number) => {
+  if (!sec) return null;
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  return h ? `${h}h ${m}m` : `${m}m`;
+};
 
 export default function ProgressPage() {
   const sessions = useLiveQuery(
@@ -23,19 +35,28 @@ export default function ProgressPage() {
   const logs = useLiveQuery(() => db.setLogs.toArray(), []);
   const wexs = useLiveQuery(() => db.workoutExercises.toArray(), []);
   const exercises = useLiveQuery(() => db.exercises.toArray(), []);
+  const workouts = useLiveQuery(() => db.workouts.toArray(), []);
 
-  if (!sessions || !logs || !wexs || !exercises) {
+  if (!sessions || !logs || !wexs || !exercises || !workouts) {
     return <p className="mt-10 text-center text-faint">Loading…</p>;
   }
 
-  const points = sessions.map((s) => ({
-    label: shortDate(s.date),
-    value: sumVolume(logs.filter((l) => l.sessionId === s.id)),
-  }));
-  const total = sumVolume(logs);
+  // Tonnage per session — in-app set logs, or the watch-reported volume (kg→lbs).
+  // Sessions with no volume at all (most cardio + watch strength rows without a
+  // volume field) don't get a point: a zero would read as a crashed session.
+  const strength = sessions.filter((s) => s.kind !== "cardio");
+  const points: TrendPoint[] = strength
+    .map((s) => ({
+      label: shortDate(s.date),
+      value: sessionTonnageLbs(s, logs.filter((l) => l.sessionId === s.id)),
+      imported: s.source === "watch",
+    }))
+    .filter((p) => p.value > 0);
+  const total = points.reduce((sum, p) => sum + p.value, 0);
   const best = points.reduce((m, p) => Math.max(m, p.value), 0);
 
   const exById = new Map(exercises.map((e) => [e.id, e]));
+  const woById = new Map(workouts.map((w) => [w.id, w]));
   const weToMuscle = new Map<string, string>();
   wexs.forEach((we) => {
     const ex = exById.get(we.exerciseId);
@@ -67,6 +88,8 @@ export default function ProgressPage() {
     );
   }
 
+  const recent = [...sessions].reverse().slice(0, 10);
+
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
@@ -75,9 +98,9 @@ export default function ProgressPage() {
       </header>
 
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Total" value={`${fmtVolume(total)}`} unit={BRAND.unit} />
-        <Stat label="Sessions" value={String(sessions.length)} />
-        <Stat label="Best" value={`${fmtVolume(best)}`} unit={BRAND.unit} />
+        <Stat label="Sessions" value={String(sessions.length)} unit={`${strength.length} strength`} />
+        <Stat label="Tracked vol." value={`${fmtVolume(total)}`} unit={BRAND.unit} />
+        <Stat label="Best session" value={`${fmtVolume(best)}`} unit={BRAND.unit} />
       </div>
 
       <section className="panel p-4">
@@ -85,12 +108,48 @@ export default function ProgressPage() {
         <VolumeTrend points={points} />
       </section>
 
+      <LoadGauge sessions={sessions} />
+
       <section className="panel p-4">
         <h2 className="eyebrow mb-3">Muscle load — all time</h2>
         <BodyHeatmap data={muscleData} />
         <div className="mt-4 border-t border-line pt-4">
           <MuscleLoad data={muscleData} />
         </div>
+      </section>
+
+      <section className="panel p-4">
+        <h2 className="eyebrow mb-3">History</h2>
+        <ul className="flex flex-col divide-y divide-line">
+          {recent.map((s) => {
+            const vol = sessionTonnageLbs(s, logs.filter((l) => l.sessionId === s.id));
+            const name =
+              (s.workoutId && woById.get(s.workoutId)?.name) ||
+              (s.kind === "cardio" ? "Cardio" : "Strength");
+            return (
+              <li key={s.id} className="flex items-baseline justify-between gap-2 py-2 text-sm">
+                <div className="min-w-0">
+                  <span className="text-ink">{name}</span>
+                  {s.source === "watch" ? (
+                    <span className="ml-1.5 rounded border border-line px-1 text-[0.55rem] uppercase tracking-wider text-faint">
+                      watch
+                    </span>
+                  ) : null}
+                  <p className="tnum text-[0.65rem] text-faint">
+                    {dayLabel(s.date)}
+                    {s.clockTime ? ` · ${s.clockTime}` : ""}
+                    {fmtDur(s.durationSec) ? ` · ${fmtDur(s.durationSec)}` : ""}
+                  </p>
+                </div>
+                <div className="tnum shrink-0 text-right text-[0.7rem]">
+                  {vol > 0 ? <p className="text-cyan">{fmtVolume(vol)} {BRAND.unit}</p> : null}
+                  {s.kcal ? <p className="text-faint">{s.kcal} kcal</p> : null}
+                  {s.avgHr ? <p className="text-faint">{s.avgHr} bpm</p> : null}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </section>
     </div>
   );

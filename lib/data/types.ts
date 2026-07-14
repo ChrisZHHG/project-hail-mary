@@ -54,11 +54,22 @@ export interface WorkoutExercise {
 
 export interface Session {
   id: string;
-  workoutId: string;
+  /** Undefined for imported sessions (e.g. elliptical) with no program day. */
+  workoutId?: string;
   /** YYYY-MM-DD (local). */
   date: string;
   startedAt: number;
   completedAt?: number;
+  /** Where the record came from. Absent = logged in-app. */
+  source?: "app" | "watch";
+  kind?: "strength" | "cardio";
+  durationSec?: number;
+  kcal?: number;
+  avgHr?: number;
+  /** Total volume as reported by the watch/app that recorded it (kg). */
+  importedVolumeKg?: number;
+  /** Original clock time as recorded, e.g. "8:29 AM". */
+  clockTime?: string;
 }
 
 export interface SetLog {
@@ -89,6 +100,12 @@ export interface ReadinessCheck {
   level: ReadinessLevel;
   recommendation: string;
   timestamp: number;
+  /** Where it's sore, the way the coach actually asks: area → 0-10 intensity. */
+  soreMap?: Record<string, number>;
+  /** Free-text answer to "how's the body feeling?" — surfaced in the coach view. */
+  noteToCoach?: string;
+  sleepHours?: number;
+  proteinTaken?: boolean;
 }
 
 /** A workout assignment joined with its exercise — the shape the logger renders. */
