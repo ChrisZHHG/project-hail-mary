@@ -13,6 +13,8 @@ import BodyHeatmap from "@/components/BodyHeatmap";
 import ExerciseIcon from "@/components/ExerciseIcon";
 import WeightControl from "@/components/WeightControl";
 import Stepper from "@/components/Stepper";
+import LangToggle from "@/components/LangToggle";
+import { exerciseNames, useNameLang } from "@/lib/prefs";
 
 /** Freestyle logging — 自主训练. Pick a muscle on the body, recognize the
  *  machine by picture + 中文名, and log against last time's numbers. The
@@ -22,6 +24,7 @@ export default function FreestylePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [muscle, setMuscle] = useState<string | null>(null);
   const [active, setActive] = useState<string[]>([]); // exerciseIds being logged
+  const lang = useNameLang();
 
   useEffect(() => {
     let alive = true;
@@ -77,7 +80,10 @@ export default function FreestylePage() {
       <div className="sticky top-0 z-30 -mx-4 border-b border-line bg-void/85 px-4 pb-3 pt-2 backdrop-blur-md">
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-xl font-bold text-ink">Freestyle · 自主训练</h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl font-bold text-ink">Freestyle · 自主训练</h1>
+              <LangToggle />
+            </div>
             <p className="eyebrow mt-0.5">tap a muscle → pick the machine → beat last time</p>
           </div>
           <div className="text-right">
@@ -135,6 +141,7 @@ export default function FreestylePage() {
               .map((e) => {
                 const last = memory.get(e.id)?.last;
                 const isActive = activeIds.includes(e.id);
+                const names = exerciseNames(e, lang);
                 return (
                   <li key={e.id}>
                     <button
@@ -154,9 +161,13 @@ export default function FreestylePage() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-[0.9rem] font-semibold text-ink">
-                          {e.aliasZh ?? e.name}
+                          {names.primary}
                         </span>
-                        <span className="block truncate text-[0.65rem] text-faint">{e.name}</span>
+                        {names.secondary ? (
+                          <span className="block truncate text-[0.65rem] text-faint">
+                            {names.secondary}
+                          </span>
+                        ) : null}
                       </span>
                       <span className="tnum shrink-0 text-right text-[0.7rem] text-laser-soft">
                         {last
@@ -201,6 +212,8 @@ function FreestyleCard({
   const [weight, setWeight] = useState<number | undefined>(undefined);
   const [reps, setReps] = useState<number | undefined>(undefined);
   const [flash, setFlash] = useState(false);
+  const lang = useNameLang();
+  const names = exerciseNames(exercise, lang);
 
   const logs =
     useLiveQuery(
@@ -254,10 +267,10 @@ function FreestyleCard({
           <ExerciseIcon pattern={exercise.pattern} />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold leading-tight text-ink">
-            {exercise.aliasZh ?? exercise.name}
-          </h3>
-          <p className="truncate text-[0.65rem] text-faint">{exercise.name}</p>
+          <h3 className="text-base font-semibold leading-tight text-ink">{names.primary}</h3>
+          {names.secondary ? (
+            <p className="truncate text-[0.65rem] text-faint">{names.secondary}</p>
+          ) : null}
         </div>
         {logs.length === 0 ? (
           <button onClick={onRemoveEmpty} className="text-[0.7rem] text-faint hover:text-danger">

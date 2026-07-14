@@ -6,6 +6,9 @@ import { db } from "@/lib/data/db";
 import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
 import { BRAND } from "@/lib/brand";
+import { exerciseNames, useNameLang } from "@/lib/prefs";
+import LangToggle from "@/components/LangToggle";
+import ExerciseIcon from "@/components/ExerciseIcon";
 
 /** Gym-floor lookup: "what did I do last time on this machine?"
  *  Search by name or tap a muscle-group chip → last top set + recent history,
@@ -31,15 +34,23 @@ export default function LookupPage() {
   const q = query.trim().toLowerCase();
   const visible = memories.filter((m) => {
     if (muscle && m.exercise.targetMuscle !== muscle) return false;
-    if (q && !m.exercise.name.toLowerCase().includes(q)) return false;
+    if (
+      q &&
+      !m.exercise.name.toLowerCase().includes(q) &&
+      !(m.exercise.aliasZh ?? "").toLowerCase().includes(q)
+    )
+      return false;
     return true;
   });
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="pt-2">
-        <p className="eyebrow">Memory</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">Last time on…</h1>
+      <header className="flex items-end justify-between pt-2">
+        <div>
+          <p className="eyebrow">Memory</p>
+          <h1 className="mt-1 text-2xl font-bold text-ink">Last time on…</h1>
+        </div>
+        <LangToggle />
       </header>
 
       <input
@@ -85,12 +96,20 @@ export default function LookupPage() {
 function MemoryCard({ m }: { m: ExerciseMemory }) {
   const [open, setOpen] = useState(false);
   const { exercise, last, recent, totalSets } = m;
+  const lang = useNameLang();
+  const names = exerciseNames(exercise, lang);
   return (
     <li className="panel p-4">
       <button className="tap w-full text-left" onClick={() => setOpen((o) => !o)}>
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-[0.95rem] font-semibold text-ink">{exercise.name}</p>
+          <span className="mt-0.5 shrink-0 text-cyan">
+            <ExerciseIcon pattern={exercise.pattern} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[0.95rem] font-semibold text-ink">{names.primary}</p>
+            {names.secondary ? (
+              <p className="truncate text-[0.62rem] text-faint">{names.secondary}</p>
+            ) : null}
             <p className="eyebrow mt-0.5">{exercise.targetMuscle}</p>
           </div>
           {last ? (

@@ -7,6 +7,7 @@ import { repo } from "@/lib/data/repository";
 import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { methodTag, theoryForExercise } from "@/lib/theory";
+import { exerciseNames, useNameLang } from "@/lib/prefs";
 import type { ExerciseInstance, SetLog } from "@/lib/data/types";
 import Stepper from "./Stepper";
 import WeightControl from "./WeightControl";
@@ -35,6 +36,8 @@ export default function ExecutionCard({
   const showRir = !!instance.targetRir;
   const mTag = methodTag(exercise.name, exercise.category);
   const relatedTheory = theoryForExercise(exercise.id, exercise.targetMuscle);
+  const lang = useNameLang();
+  const names = exerciseNames(exercise, lang);
 
   const logs =
     useLiveQuery(
@@ -112,7 +115,7 @@ export default function ExecutionCard({
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold leading-tight text-ink">{exercise.name}</h3>
+            <h3 className="text-base font-semibold leading-tight text-ink">{names.primary}</h3>
             {instance.optional ? (
               <span className="rounded border border-line px-1.5 py-0.5 text-[0.6rem] uppercase tracking-wider text-faint">
                 optional
@@ -133,6 +136,9 @@ export default function ExecutionCard({
               </Link>
             ) : null}
           </div>
+          {names.secondary ? (
+            <p className="mt-0.5 truncate text-[0.62rem] text-faint">{names.secondary}</p>
+          ) : null}
           <p className="eyebrow mt-1">
             {exercise.targetMuscle}
             {" · "}
