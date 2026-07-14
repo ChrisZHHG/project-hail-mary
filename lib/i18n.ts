@@ -83,6 +83,8 @@ const DICT = {
   beatIt: ["今天目标：比它多一点", "target today: beat it"],
   firstRecord: ["首次记录 — 打好基准。", "First record — set the baseline."],
   same: ["▬ 持平", "▬ same"],
+  bw: ["自重", "BW"],
+  repsShort: ["次", "reps"],
 
   // lookup
   memory: ["记忆", "Memory"],

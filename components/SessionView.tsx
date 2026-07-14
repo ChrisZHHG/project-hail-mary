@@ -13,6 +13,8 @@ import type { ExerciseInstance, WorkoutSection } from "@/lib/data/types";
 import { PRE_WORKOUT_PROTOCOL } from "@/lib/theory";
 import { useT, type I18nKey } from "@/lib/i18n";
 import ExecutionCard from "./ExecutionCard";
+import { fmtDayLong } from "@/lib/dates";
+import { useNameLang } from "@/lib/prefs";
 
 const SECTION_LABEL: Record<WorkoutSection, I18nKey> = {
   warmup: "warmup",
@@ -21,17 +23,12 @@ const SECTION_LABEL: Record<WorkoutSection, I18nKey> = {
 };
 const SECTION_ORDER: WorkoutSection[] = ["warmup", "main", "cardio"];
 
-const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const fmtDay = (iso: string) => {
-  const d = new Date(iso + "T00:00:00");
-  return `${WEEKDAY[d.getDay()]} · ${MONTH[d.getMonth()]} ${d.getDate()}`;
-};
 
 export default function SessionView({ workoutId }: { workoutId: string }) {
   const t = useT();
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const lang = useNameLang();
   const workout = useWorkout(workoutId);
   const instances = useExerciseInstances(workoutId);
   const logs = useSessionLogs(sessionId ?? undefined) ?? [];
@@ -39,7 +36,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
     () => (sessionId ? db.sessions.get(sessionId) : undefined),
     [sessionId]
   );
-  const dayLabel = fmtDay(session?.date ?? today());
+  const dayLabel = fmtDayLong(session?.date ?? today(), lang);
 
   useEffect(() => {
     let alive = true;

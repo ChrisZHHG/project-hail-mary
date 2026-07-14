@@ -9,12 +9,13 @@ import VolumeTrend, { type TrendPoint } from "@/components/VolumeTrend";
 import MuscleLoad from "@/components/MuscleLoad";
 import BodyHeatmap from "@/components/BodyHeatmap";
 import LoadGauge from "@/components/LoadGauge";
-import { WEEKDAY_SHORT } from "@/lib/dates";
+import { WEEKDAY_SHORT, WEEKDAY_ZH } from "@/lib/dates";
+import { useNameLang } from "@/lib/prefs";
 import { useT } from "@/lib/i18n";
 
 const shortDate = (d: string) => d.slice(5).replace("-", "/");
-const dayLabel = (d: string) => {
-  const wd = WEEKDAY_SHORT[new Date(`${d}T00:00:00`).getDay()];
+const dayLabel = (d: string, lang: "zh" | "en") => {
+  const wd = (lang === "zh" ? WEEKDAY_ZH : WEEKDAY_SHORT)[new Date(`${d}T00:00:00`).getDay()];
   return `${wd} · ${shortDate(d)}`;
 };
 const fmtDur = (sec?: number) => {
@@ -25,6 +26,7 @@ const fmtDur = (sec?: number) => {
 };
 
 export default function ProgressPage() {
+  const lang = useNameLang();
   const t = useT();
   const sessions = useLiveQuery(
     () =>
@@ -144,7 +146,7 @@ export default function ProgressPage() {
                     </span>
                   ) : null}
                   <p className="tnum text-[0.65rem] text-faint">
-                    {dayLabel(s.date)}
+                    {dayLabel(s.date, lang)}
                     {s.clockTime ? ` · ${s.clockTime}` : ""}
                     {fmtDur(s.durationSec) ? ` · ${fmtDur(s.durationSec)}` : ""}
                   </p>

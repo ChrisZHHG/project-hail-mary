@@ -64,8 +64,8 @@ export default function Home() {
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
       d.getDate()
     ).padStart(2, "0")}`;
-    setNextDayLabel(fmtDayLong(iso));
-  }, [nextWorkout]);
+    setNextDayLabel(fmtDayLong(iso, lang));
+  }, [nextWorkout, lang]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -193,7 +193,7 @@ export default function Home() {
           <div>
             <p className="eyebrow">{t("lastSession")}</p>
             <p className="mt-1 text-sm text-muted">
-              {fmtDayLong(lastSession.date)}
+              {fmtDayLong(lastSession.date, lang)}
               {lastSession.source === "watch" ? (
                 <span className="ml-1.5 rounded border border-line px-1 text-[0.55rem] uppercase tracking-wider text-faint">
                   watch

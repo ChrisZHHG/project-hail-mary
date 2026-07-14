@@ -10,7 +10,7 @@ import type { Exercise } from "./data/types";
 export type NameLang = "zh" | "en";
 const LS_KEY = "phm-name-lang";
 
-let lang: NameLang = "zh"; // SSR + first paint default (Chris thinks in 中文)
+let lang: NameLang = "en"; // SSR + first paint default
 const listeners = new Set<() => void>();
 
 function subscribe(fn: () => void) {
@@ -33,7 +33,7 @@ export function useNameLang(): NameLang {
   return useSyncExternalStore(
     subscribe,
     () => lang,
-    () => "zh" as const // server snapshot
+    () => "en" as const // server snapshot
   );
 }
 

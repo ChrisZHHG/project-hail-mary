@@ -112,21 +112,18 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[0.95rem] font-semibold text-ink">{names.primary}</p>
-            {names.secondary ? (
-              <p className="truncate text-[0.62rem] text-faint">{names.secondary}</p>
-            ) : null}
             <p className="eyebrow mt-0.5">{muscleName(exercise.targetMuscle)}</p>
           </div>
           {last ? (
             <div className="shrink-0 text-right">
               <p className="tnum text-lg font-bold text-cyan">
                 {last.estimated ? "~" : ""}
-                {last.weight != null ? `${last.weight} ${BRAND.unit}` : "BW"}
+                {last.weight != null ? `${last.weight} ${BRAND.unit}` : t("bw")}
                 {last.reps != null ? <span className="text-ink"> × {last.reps}</span> : null}
               </p>
               <p className="tnum text-[0.65rem] text-faint">
                 {last.rir != null ? `@${last.rir} RIR · ` : ""}
-                {last.date ? fmtDayLong(last.date) : ""}
+                {last.date ? fmtDayLong(last.date, lang) : ""}
               </p>
             </div>
           ) : (
@@ -140,10 +137,10 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
           <ul className="flex flex-col gap-1">
             {recent.map((r, i) => (
               <li key={i} className="tnum flex justify-between text-[0.8rem] text-muted">
-                <span>{r.date ? fmtDayLong(r.date) : "—"}</span>
+                <span>{r.date ? fmtDayLong(r.date, lang) : "—"}</span>
                 <span>
                   {r.estimated ? "~" : ""}
-                  {r.weight != null ? `${r.weight} ${BRAND.unit}` : "BW"}
+                  {r.weight != null ? `${r.weight} ${BRAND.unit}` : t("bw")}
                   {r.reps != null ? ` × ${r.reps}` : ""}
                   {r.rir != null ? ` @${r.rir}` : ""}
                 </span>

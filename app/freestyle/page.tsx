@@ -166,15 +166,10 @@ export default function FreestylePage() {
                         <span className="block text-[0.9rem] font-semibold text-ink">
                           {names.primary}
                         </span>
-                        {names.secondary ? (
-                          <span className="block truncate text-[0.65rem] text-faint">
-                            {names.secondary}
-                          </span>
-                        ) : null}
                       </span>
                       <span className="tnum shrink-0 text-right text-[0.7rem] text-laser-soft">
                         {last
-                          ? `${t("last")} ${last.weight != null ? `${last.weight}${BRAND.unit}` : "BW"}${
+                          ? `${t("last")} ${last.weight != null ? `${last.weight}${BRAND.unit}` : t("bw")}${
                               last.reps != null ? `×${last.reps}` : ""
                             }`
                           : t("firstTime")}
@@ -244,8 +239,8 @@ function FreestyleCard({
     if (cw < lw) return { sign: "down", label: `▼ ${cw - lw} ${BRAND.unit}` };
     const lr = last.reps ?? 0;
     const cr = r ?? 0;
-    if (cr > lr) return { sign: "up", label: `▲ +${cr - lr} rep${cr - lr > 1 ? "s" : ""}` };
-    if (cr < lr) return { sign: "down", label: `▼ ${cr - lr} reps` };
+    if (cr > lr) return { sign: "up", label: `▲ +${cr - lr} ${t("repsShort")}` };
+    if (cr < lr) return { sign: "down", label: `▼ ${cr - lr} ${t("repsShort")}` };
     return { sign: "flat", label: t("same") };
   }
 
@@ -272,9 +267,6 @@ function FreestyleCard({
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold leading-tight text-ink">{names.primary}</h3>
-          {names.secondary ? (
-            <p className="truncate text-[0.65rem] text-faint">{names.secondary}</p>
-          ) : null}
         </div>
         {logs.length === 0 ? (
           <button onClick={onRemoveEmpty} className="text-[0.7rem] text-faint hover:text-danger">

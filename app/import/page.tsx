@@ -6,6 +6,7 @@ import { db } from "@/lib/data/db";
 import { parseWatchRows, toSession, watchSessionId } from "@/lib/data/watchCsv";
 import { fmtDayLong } from "@/lib/dates";
 import { downloadBackup, restoreBackup } from "@/lib/backup";
+import { useNameLang } from "@/lib/prefs";
 import { useT } from "@/lib/i18n";
 
 /** Manual bridge for watch data until a real HealthKit integration exists:
@@ -14,6 +15,7 @@ import { useT } from "@/lib/i18n";
 export default function ImportPage() {
   const t = useT();
   const router = useRouter();
+  const lang = useNameLang();
   const [text, setText] = useState("");
   const [done, setDone] = useState<number | null>(null);
 
@@ -58,7 +60,7 @@ export default function ImportPage() {
             {rows.map((r) => (
               <li key={watchSessionId(r)} className="flex items-baseline justify-between gap-2 py-1.5 text-[0.75rem]">
                 <span className="min-w-0">
-                  <span className="text-ink">{fmtDayLong(r.date)}</span>
+                  <span className="text-ink">{fmtDayLong(r.date, lang)}</span>
                   <span className="ml-1.5 text-faint">{r.clockTime}</span>
                   <span className={`ml-1.5 rounded border px-1 text-[0.55rem] uppercase tracking-wider ${
                     r.kind === "strength" ? "border-laser/40 text-laser" : "border-cyan/40 text-cyan"

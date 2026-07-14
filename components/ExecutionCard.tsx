@@ -139,9 +139,6 @@ export default function ExecutionCard({
               </Link>
             ) : null}
           </div>
-          {names.secondary ? (
-            <p className="mt-0.5 truncate text-[0.62rem] text-faint">{names.secondary}</p>
-          ) : null}
           <p className="eyebrow mt-1">
             {muscleName(exercise.targetMuscle)}
             {" · "}
