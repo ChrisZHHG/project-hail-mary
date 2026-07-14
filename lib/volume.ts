@@ -8,13 +8,11 @@ export const sumVolume = (logs: SetLog[]) => logs.reduce((s, l) => s + setVolume
 
 export const KG_TO_LB = 2.20462;
 
-/** Session tonnage in lbs: in-app set logs win; otherwise fall back to the
- *  volume the watch reported (kg → lbs). 0 if neither exists. */
+/** Session tonnage in lbs. A volume the watch actually measured beats any
+ *  reconstructed/estimated set logs; live in-app logs beat everything else. */
 export const sessionTonnageLbs = (session: Session, sessionLogs: SetLog[]) => {
-  const logged = sumVolume(sessionLogs);
-  if (logged > 0) return logged;
   if (session.importedVolumeKg) return session.importedVolumeKg * KG_TO_LB;
-  return 0;
+  return sumVolume(sessionLogs);
 };
 
 export const fmtVolume = (v: number) =>

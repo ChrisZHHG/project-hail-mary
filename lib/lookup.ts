@@ -11,6 +11,8 @@ export interface ExerciseSetEntry {
   reps?: number;
   rir?: number;
   timestamp: number;
+  /** Reconstructed from a described routine, not logged live — shown as "~". */
+  estimated?: boolean;
 }
 
 export interface ExerciseMemory {
@@ -32,7 +34,10 @@ export function buildExerciseMemory(
   const byExercise = new Map<string, SetLog[]>();
   for (const log of logs) {
     if (!log.done || (log.weight == null && log.reps == null)) continue;
-    const exId = weToExercise.get(log.workoutExerciseId);
+    // Program-assigned sets resolve via the assignment; freestyle/reconstructed
+    // sets carry the exercise directly.
+    const exId =
+      (log.workoutExerciseId && weToExercise.get(log.workoutExerciseId)) || log.exerciseId;
     if (!exId) continue;
     const arr = byExercise.get(exId);
     if (arr) arr.push(log);
@@ -49,6 +54,7 @@ export function buildExerciseMemory(
         reps: l.reps,
         rir: l.rir,
         timestamp: l.timestamp,
+        estimated: l.estimated,
       });
       // Collapse to the top-weight set per session, newest session first.
       const bySession = new Map<string, SetLog>();

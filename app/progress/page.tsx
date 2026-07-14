@@ -66,7 +66,10 @@ export default function ProgressPage() {
   logs.forEach((l) => {
     const v = setVolume(l);
     if (v > 0) {
-      const m = weToMuscle.get(l.workoutExerciseId) ?? "Other";
+      const m =
+        (l.workoutExerciseId && weToMuscle.get(l.workoutExerciseId)) ||
+        (l.exerciseId && exById.get(l.exerciseId)?.targetMuscle) ||
+        "Other";
       muscleTotals.set(m, (muscleTotals.get(m) ?? 0) + v);
     }
   });
@@ -122,7 +125,10 @@ export default function ProgressPage() {
         <h2 className="eyebrow mb-3">History</h2>
         <ul className="flex flex-col divide-y divide-line">
           {recent.map((s) => {
-            const vol = sessionTonnageLbs(s, logs.filter((l) => l.sessionId === s.id));
+            const sessionLogs = logs.filter((l) => l.sessionId === s.id);
+            const vol = sessionTonnageLbs(s, sessionLogs);
+            // "~" = tonnage comes from reconstructed sets, not a measured value
+            const approx = !s.importedVolumeKg && sessionLogs.some((l) => l.estimated);
             const name =
               (s.workoutId && woById.get(s.workoutId)?.name) ||
               (s.kind === "cardio" ? "Cardio" : "Strength");
@@ -142,7 +148,11 @@ export default function ProgressPage() {
                   </p>
                 </div>
                 <div className="tnum shrink-0 text-right text-[0.7rem]">
-                  {vol > 0 ? <p className="text-cyan">{fmtVolume(vol)} {BRAND.unit}</p> : null}
+                  {vol > 0 ? (
+                    <p className="text-cyan">
+                      {approx ? "~" : ""}{fmtVolume(vol)} {BRAND.unit}
+                    </p>
+                  ) : null}
                   {s.kcal ? <p className="text-faint">{s.kcal} kcal</p> : null}
                   {s.avgHr ? <p className="text-faint">{s.avgHr} bpm</p> : null}
                 </div>

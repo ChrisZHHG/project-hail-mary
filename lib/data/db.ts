@@ -15,7 +15,7 @@ import {
   SEED_WORKOUT_EXERCISES,
   buildDemoHistory,
 } from "./seed";
-import { WATCH_SESSIONS } from "./watchHistory";
+import { WATCH_SESSIONS, WATCH_SESSION_LOGS } from "./watchHistory";
 
 /** IndexedDB store (local-first). The Repository layer is what the app talks to;
  *  this class is the storage detail that a Supabase adapter would replace. */
@@ -65,6 +65,7 @@ export class HailMaryDB extends Dexie {
           .table("setLogs")
           .toCollection()
           .modify((log: SetLog) => {
+            if (!log.workoutExerciseId) return; // freestyle/imported sets have none
             const old = oldById.get(log.workoutExerciseId);
             if (!old) return; // already new-style or unknown — leave untouched
             const next = newIdByKey.get(`${old.workoutId}|${old.exerciseId}`);
@@ -75,6 +76,16 @@ export class HailMaryDB extends Dexie {
 
         // 3. Watch history backfill — stable ids make this idempotent.
         await tx.table("sessions").bulkPut(WATCH_SESSIONS);
+      });
+
+    /* v3 — reconstructed exercise detail for the watch strength sessions
+     * (Chris described his actual freestyle back-day routine; sets are
+     * flagged `estimated`). Also adds the freestyle machines to the catalog. */
+    this.version(3)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table("exercises").bulkPut(SEED_EXERCISES);
+        await tx.table("setLogs").bulkPut(WATCH_SESSION_LOGS);
       });
 
     this.on("populate", () => this.seed());
@@ -88,7 +99,7 @@ export class HailMaryDB extends Dexie {
     await this.workoutExercises.bulkAdd(SEED_WORKOUT_EXERCISES);
     const demo = buildDemoHistory(now);
     await this.sessions.bulkAdd([demo.session, ...WATCH_SESSIONS]);
-    await this.setLogs.bulkAdd(demo.logs);
+    await this.setLogs.bulkAdd([...demo.logs, ...WATCH_SESSION_LOGS]);
   }
 }
 

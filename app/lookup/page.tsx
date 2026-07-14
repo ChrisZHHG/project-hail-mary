@@ -96,6 +96,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
           {last ? (
             <div className="shrink-0 text-right">
               <p className="tnum text-lg font-bold text-cyan">
+                {last.estimated ? "~" : ""}
                 {last.weight != null ? `${last.weight} ${BRAND.unit}` : "BW"}
                 {last.reps != null ? <span className="text-ink"> × {last.reps}</span> : null}
               </p>
@@ -117,6 +118,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
               <li key={i} className="tnum flex justify-between text-[0.8rem] text-muted">
                 <span>{r.date ? fmtDayLong(r.date) : "—"}</span>
                 <span>
+                  {r.estimated ? "~" : ""}
                   {r.weight != null ? `${r.weight} ${BRAND.unit}` : "BW"}
                   {r.reps != null ? ` × ${r.reps}` : ""}
                   {r.rir != null ? ` @${r.rir}` : ""}
@@ -124,7 +126,9 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
               </li>
             ))}
           </ul>
-          <p className="mt-1.5 text-[0.65rem] text-faint">{totalSets} sets logged all-time</p>
+          <p className="mt-1.5 text-[0.65rem] text-faint">
+            {totalSets} sets all-time{recent.some((r) => r.estimated) ? " · ~ = reconstructed from your described routine" : ""}
+          </p>
         </div>
       ) : null}
     </li>

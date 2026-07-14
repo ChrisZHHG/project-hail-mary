@@ -75,13 +75,19 @@ export interface Session {
 export interface SetLog {
   id: string;
   sessionId: string;
-  workoutExerciseId: string;
+  /** Program assignment this set was logged against (in-app sets). Absent for
+   *  reconstructed/imported sets, which carry `exerciseId` directly instead. */
+  workoutExerciseId?: string;
+  /** Direct exercise reference for sets with no program assignment. */
+  exerciseId?: string;
   setNumber: number;
   weight?: number;
   reps?: number;
   rir?: number;
   done: boolean;
   timestamp: number;
+  /** True when reconstructed from a described routine, not logged live. */
+  estimated?: boolean;
 }
 
 export type ReadinessLevel = "go" | "steady" | "caution" | "down";

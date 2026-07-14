@@ -130,6 +130,27 @@ const CATALOG = {
     link: "https://youtube.com/shorts/WF4uuJw9uSo",
     biomechanicNotes: "4-second burst as hard as you can, 4-second rest. Repeat 4x.",
   },
+  // --- Chris's freestyle back-day machines (reconstructed watch sessions;
+  // --- not in Austin's program, but part of the real training history) ---
+  saRow: {
+    name: "Single-Arm Machine Row",
+    targetMuscle: "Back",
+    category: "compound",
+    isWeighted: true,
+    biomechanicNotes: "Right arm runs ~2 reps ahead of the left — log each arm as its own set.",
+  },
+  ropePulldown: {
+    name: "Rope Straight-Arm Pulldown",
+    targetMuscle: "Back",
+    category: "isolation",
+    isWeighted: true,
+  },
+  seatedRow: {
+    name: "Seated Cable Row",
+    targetMuscle: "Back",
+    category: "compound",
+    isWeighted: true,
+  },
   bike: {
     name: "Exercise Bike — 20 Minutes",
     targetMuscle: "Cardio",

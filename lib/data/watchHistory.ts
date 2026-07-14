@@ -1,4 +1,4 @@
-import type { Session } from "./types";
+import type { Session, SetLog } from "./types";
 import { parseWatchRows, toSession } from "./watchCsv";
 
 /** Chris's real Apple Watch history (June 2026), verbatim from the watch export.
@@ -22,3 +22,89 @@ const RAW = `
 `;
 
 export const WATCH_SESSIONS: Session[] = parseWatchRows(RAW).map(toSession);
+
+/* ------------------------------------------------------------------ *
+ * Reconstructed set logs (estimated: true on every row).              *
+ *                                                                     *
+ * Chris described his actual freestyle back-day routine for these     *
+ * sessions (July 2026): warm up with 2-3 bodyweight pull-ups → lat    *
+ * pulldown 4-5 sets (stack 10 ≈ 100 lbs) or rope straight-arm         *
+ * pulldown (≈ 50 lbs) → single-arm machine row 4 sets, right arm ~2   *
+ * reps ahead (R10/L8 or R8/L6, stack 4-5 ≈ 45 lbs) → sometimes a      *
+ * seated cable row → cable crunch (stack 9-10 ≈ 95 lbs) added from    *
+ * ~June 21. Stack plates ≈ 10 lbs each (Chris's pick); reps 8-10.     *
+ *                                                                     *
+ * These are estimates, flagged as such and rendered with "~" in the   *
+ * UI. Where the watch measured total volume (6/07, 6/16) the measured *
+ * number wins over these logs (see sessionTonnageLbs).                *
+ * ------------------------------------------------------------------ */
+
+const LBS_PER_PLATE = 10;
+const W = {
+  pulldown: 10 * LBS_PER_PLATE, // 背 stack 10
+  saRow: 4.5 * LBS_PER_PLATE, // 提拉 stack 4-5 → 45
+  ropePulldown: 5 * LBS_PER_PLATE,
+  seatedRow: 5 * LBS_PER_PLATE,
+  cableCrunch: 9.5 * LBS_PER_PLATE, // 腹肌 stack 9-10 → 95
+};
+const CRUNCH_FROM = "2026-06-21"; // "最近加的"
+
+function buildWatchLogs(): SetLog[] {
+  const logs: SetLog[] = [];
+  const strength = WATCH_SESSIONS.filter((s) => s.kind === "strength").sort((a, b) =>
+    a.startedAt - b.startedAt
+  );
+
+  strength.forEach((session, i) => {
+    let minute = 3; // first work set a few minutes in
+    let n = 0;
+    const add = (exCode: string, weight: number | undefined, reps: number) => {
+      logs.push({
+        id: `log-watch-${session.date}-${exCode}-${n++}`,
+        sessionId: session.id,
+        exerciseId: `ex-${exCode}`,
+        setNumber: n,
+        weight,
+        reps,
+        done: true,
+        estimated: true,
+        timestamp: session.startedAt + minute * 60 * 1000,
+      });
+      minute += 3;
+    };
+
+    const short = (session.durationSec ?? 3600) < 40 * 60;
+
+    // warm-up pull-ups, bodyweight
+    add("pulldown", undefined, 3);
+    add("pulldown", undefined, 3);
+
+    // main vertical pull: usually lat pulldown, every ~3rd session the rope
+    if (i % 3 === 2) {
+      for (let s = 0; s < (short ? 3 : 4); s++) add("ropePulldown", W.ropePulldown, 9);
+    } else {
+      for (let s = 0; s < (short ? 4 : 5); s++) add("pulldown", W.pulldown, 9);
+    }
+
+    // single-arm machine row — each arm logged as its own set, right leads
+    const [r, l] = i % 2 === 0 ? [10, 8] : [8, 6];
+    for (let round = 0; round < 2; round++) {
+      add("saRow", W.saRow, r);
+      add("saRow", W.saRow, l);
+    }
+
+    // seated cable row, some days (skipped on short sessions)
+    if (i % 3 === 1 && !short) {
+      for (let s = 0; s < 3; s++) add("seatedRow", W.seatedRow, 9);
+    }
+
+    // cable crunch — recent addition
+    if (session.date >= CRUNCH_FROM) {
+      for (let s = 0; s < 3; s++) add("cableCrunch", W.cableCrunch, 9);
+    }
+  });
+
+  return logs;
+}
+
+export const WATCH_SESSION_LOGS: SetLog[] = buildWatchLogs();
