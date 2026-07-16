@@ -96,6 +96,91 @@ export default function LookupPage() {
   );
 }
 
+function EditableEntry({
+  entry,
+  lang,
+}: {
+  entry: import("@/lib/lookup").ExerciseSetEntry;
+  lang: "zh" | "en";
+}) {
+  const t = useT();
+  const [editing, setEditing] = useState(false);
+  const [w, setW] = useState<string>(entry.weight?.toString() ?? "");
+  const [reps, setReps] = useState<string>(entry.reps?.toString() ?? "");
+  const [rir, setRir] = useState<string>(entry.rir?.toString() ?? "");
+  const [variant, setVariant] = useState<string>(entry.variant ?? "");
+
+  async function saveEdit() {
+    await db.setLogs.update(entry.id, {
+      weight: w.trim() === "" ? undefined : Number(w),
+      reps: reps.trim() === "" ? undefined : Number(reps),
+      rir: rir.trim() === "" ? undefined : Number(rir),
+      variant: variant.trim() || undefined,
+      estimated: false, // user-corrected → real
+    });
+    setEditing(false);
+  }
+
+  async function removeEdit() {
+    await db.setLogs.delete(entry.id);
+    setEditing(false);
+  }
+
+  if (!editing) {
+    return (
+      <li className="tnum flex items-center justify-between gap-2 text-[0.8rem] text-muted">
+        <span>{entry.date ? fmtDayLong(entry.date, lang) : "—"}</span>
+        <span className="ml-auto">
+          {entry.estimated ? "~" : ""}
+          {entry.weight != null ? `${entry.weight} ${BRAND.unit}` : t("bw")}
+          {entry.reps != null ? ` × ${entry.reps}` : ""}
+          {entry.rir != null ? ` @${entry.rir}` : ""}
+          {entry.variant ? ` · ${entry.variant}` : ""}
+        </span>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          aria-label="edit entry"
+          className="tap px-1 text-faint hover:text-cyan"
+        >
+          ✎
+        </button>
+      </li>
+    );
+  }
+
+  const numInput =
+    "w-16 rounded-lg border border-line bg-elevated px-2 py-1.5 text-center text-sm text-ink focus:border-cyan focus:outline-none";
+  return (
+    <li className="rounded-xl border border-cyan/30 p-2.5">
+      <div className="flex items-center gap-1.5">
+        <input inputMode="decimal" value={w} onChange={(e) => setW(e.target.value)} className={numInput} placeholder={BRAND.unit} aria-label="weight" />
+        <span className="text-faint">×</span>
+        <input inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} className={numInput} placeholder="reps" aria-label="reps" />
+        <span className="text-faint">@</span>
+        <input inputMode="numeric" value={rir} onChange={(e) => setRir(e.target.value)} className={numInput} placeholder="RIR" aria-label="rir" />
+      </div>
+      <input
+        value={variant}
+        onChange={(e) => setVariant(e.target.value)}
+        placeholder={t("variantLabel")}
+        className="mt-1.5 w-full rounded-lg border border-line bg-elevated px-2 py-1.5 text-sm text-ink placeholder:text-faint focus:border-cyan focus:outline-none"
+      />
+      <div className="mt-2 flex gap-2">
+        <button type="button" onClick={saveEdit} className="tap flex-1 rounded-lg bg-cyan/15 py-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-cyan">
+          {t("save")}
+        </button>
+        <button type="button" onClick={removeEdit} className="tap rounded-lg border border-danger/50 px-3 py-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-danger">
+          {t("remove")}
+        </button>
+        <button type="button" onClick={() => setEditing(false)} className="tap px-2 text-[0.7rem] text-faint">
+          ✕
+        </button>
+      </div>
+    </li>
+  );
+}
+
 function MemoryCard({ m }: { m: ExerciseMemory }) {
   const [open, setOpen] = useState(false);
   const { exercise, last, recent, totalSets } = m;
@@ -135,20 +220,13 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
         <div className="mt-3 border-t border-line pt-2">
           <p className="eyebrow mb-1.5">{t("recentSessions")}</p>
           <ul className="flex flex-col gap-1">
-            {recent.map((r, i) => (
-              <li key={i} className="tnum flex justify-between text-[0.8rem] text-muted">
-                <span>{r.date ? fmtDayLong(r.date, lang) : "—"}</span>
-                <span>
-                  {r.estimated ? "~" : ""}
-                  {r.weight != null ? `${r.weight} ${BRAND.unit}` : t("bw")}
-                  {r.reps != null ? ` × ${r.reps}` : ""}
-                  {r.rir != null ? ` @${r.rir}` : ""}
-                </span>
-              </li>
+            {recent.map((r) => (
+              <EditableEntry key={r.id} entry={r} lang={lang} />
             ))}
           </ul>
           <p className="mt-1.5 text-[0.65rem] text-faint">
-            {totalSets} {t("setsAllTime")}{recent.some((r) => r.estimated) ? ` · ${t("reconstructedNote")}` : ""}
+            {totalSets} {t("setsAllTime")} · {t("editedNote")}
+            {recent.some((r) => r.estimated) ? ` · ${t("reconstructedNote")}` : ""}
           </p>
         </div>
       ) : null}

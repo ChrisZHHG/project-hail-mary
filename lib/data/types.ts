@@ -90,6 +90,8 @@ export interface SetLog {
   rir?: number;
   done: boolean;
   timestamp: number;
+  /** Grip/stance variation for this set, e.g. "narrow" / "wide". */
+  variant?: string;
   /** True when reconstructed from a described routine, not logged live. */
   estimated?: boolean;
 }

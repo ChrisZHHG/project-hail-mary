@@ -21,5 +21,5 @@ export const BRAND = {
   /** Default weight unit for this trial (the seed program is in lbs). */
   unit: "lbs" as "lbs" | "kg",
   /** Default weight step for the +/- steppers. */
-  weightStep: 5,
+  weightStep: 2.5,
 } as const;

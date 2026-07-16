@@ -84,6 +84,9 @@ const DICT = {
   firstRecord: ["首次记录 — 打好基准。", "First record — set the baseline."],
   same: ["▬ 持平", "▬ same"],
   bw: ["自重", "BW"],
+  save: ["保存", "Save"],
+  variantLabel: ["变体(握距等)", "variant (grip…)"],
+  editedNote: ["点行内 ✎ 可修改历史记录", "tap ✎ on a row to edit history"],
   repsShort: ["次", "reps"],
 
   // lookup

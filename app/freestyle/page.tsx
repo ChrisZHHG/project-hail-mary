@@ -13,6 +13,7 @@ import BodyHeatmap from "@/components/BodyHeatmap";
 import ExerciseIcon from "@/components/ExerciseIcon";
 import WeightControl from "@/components/WeightControl";
 import Stepper from "@/components/Stepper";
+import RirSelector from "@/components/RirSelector";
 import LangToggle from "@/components/LangToggle";
 import { exerciseNames, useNameLang } from "@/lib/prefs";
 import { useT, useMuscleName } from "@/lib/i18n";
@@ -209,6 +210,7 @@ function FreestyleCard({
 }) {
   const [weight, setWeight] = useState<number | undefined>(undefined);
   const [reps, setReps] = useState<number | undefined>(undefined);
+  const [rir, setRir] = useState<number | undefined>(undefined);
   const [flash, setFlash] = useState(false);
   const lang = useNameLang();
   const t = useT();
@@ -229,6 +231,7 @@ function FreestyleCard({
   const sessionLast = logs.filter((l) => l.done).at(-1);
   const prefillW = sessionLast?.weight ?? last?.weight ?? 50;
   const prefillR = sessionLast?.reps ?? last?.reps ?? 8;
+  const prefillRir = sessionLast?.rir ?? last?.rir;
 
   /** ▲/▼ progress vs last time's top set — the coach's #1 rule. */
   function delta(w?: number, r?: number): { sign: "up" | "down" | "flat"; label: string } | null {
@@ -253,6 +256,7 @@ function FreestyleCard({
       setNumber: logs.length + 1,
       weight: w,
       reps: r,
+      rir: rir ?? prefillRir,
       done: true,
     });
     setFlash(true);
@@ -296,6 +300,8 @@ function FreestyleCard({
             <span className="tnum text-sm font-semibold text-ink">
               {l.weight != null ? `${l.weight}${BRAND.unit} × ` : ""}
               {l.reps}
+              {l.rir != null ? <span className="text-faint"> @{l.rir}</span> : null}
+              {l.variant ? <span className="text-faint"> · {l.variant}</span> : null}
             </span>
             {d ? (
               <span
@@ -324,6 +330,9 @@ function FreestyleCard({
         ) : null}
         <div className={`flex justify-center ${exercise.isWeighted ? "mt-3" : ""}`}>
           <Stepper label={t("reps")} value={reps} placeholder={prefillR} onChange={setReps} step={1} accent="cyan" />
+        </div>
+        <div className="mt-3 flex justify-center">
+          <RirSelector value={rir ?? prefillRir} target="1-2" onChange={setRir} />
         </div>
         <button
           type="button"

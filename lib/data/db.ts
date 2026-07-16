@@ -15,7 +15,12 @@ import {
   SEED_WORKOUT_EXERCISES,
   buildDemoHistory,
 } from "./seed";
-import { WATCH_SESSIONS, WATCH_SESSION_LOGS } from "./watchHistory";
+import {
+  WATCH_SESSIONS,
+  WATCH_SESSION_LOGS,
+  JULY15_SESSION,
+  JULY15_LOGS,
+} from "./watchHistory";
 
 /** IndexedDB store (local-first). The Repository layer is what the app talks to;
  *  this class is the storage detail that a Supabase adapter would replace. */
@@ -110,6 +115,15 @@ export class HailMaryDB extends Dexie {
         await tx.table("exercises").bulkPut(SEED_EXERCISES);
       });
 
+    /* v6 — July 15 2026 real freestyle session, dictated by Chris (grip
+     * variants included). Stable ids → idempotent. */
+    this.version(6)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table("sessions").bulkPut([JULY15_SESSION]);
+        await tx.table("setLogs").bulkPut(JULY15_LOGS);
+      });
+
     this.on("populate", () => this.seed());
   }
 
@@ -120,8 +134,8 @@ export class HailMaryDB extends Dexie {
     await this.workouts.bulkAdd(SEED_WORKOUTS);
     await this.workoutExercises.bulkAdd(SEED_WORKOUT_EXERCISES);
     const demo = buildDemoHistory(now);
-    await this.sessions.bulkAdd([demo.session, ...WATCH_SESSIONS]);
-    await this.setLogs.bulkAdd([...demo.logs, ...WATCH_SESSION_LOGS]);
+    await this.sessions.bulkAdd([demo.session, ...WATCH_SESSIONS, JULY15_SESSION]);
+    await this.setLogs.bulkAdd([...demo.logs, ...WATCH_SESSION_LOGS, ...JULY15_LOGS]);
   }
 }
 

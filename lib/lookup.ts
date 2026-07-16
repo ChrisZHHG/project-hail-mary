@@ -6,10 +6,13 @@ import type { Exercise, SetLog, WorkoutExercise } from "./data/types";
  *  small tables; no extra indexes needed. */
 
 export interface ExerciseSetEntry {
+  /** SetLog id — lets the UI edit/delete this entry. */
+  id: string;
   date: string; // session date YYYY-MM-DD
   weight?: number;
   reps?: number;
   rir?: number;
+  variant?: string;
   timestamp: number;
   /** Reconstructed from a described routine, not logged live — shown as "~". */
   estimated?: boolean;
@@ -49,10 +52,12 @@ export function buildExerciseMemory(
     .map((exercise) => {
       const sets = (byExercise.get(exercise.id) ?? []).sort((a, b) => b.timestamp - a.timestamp);
       const entry = (l: SetLog): ExerciseSetEntry => ({
+        id: l.id,
         date: sessionDates.get(l.sessionId) ?? "",
         weight: l.weight,
         reps: l.reps,
         rir: l.rir,
+        variant: l.variant,
         timestamp: l.timestamp,
         estimated: l.estimated,
       });

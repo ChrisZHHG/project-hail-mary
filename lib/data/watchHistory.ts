@@ -118,3 +118,54 @@ function buildWatchLogs(): SetLog[] {
 }
 
 export const WATCH_SESSION_LOGS: SetLog[] = buildWatchLogs();
+
+/* ------------------------------------------------------------------ *
+ * July 15, 2026 — real freestyle session, dictated by Chris verbatim  *
+ * (NOT estimated). Assisted pull-up weights are the machine's         *
+ * assistance in lbs (higher = easier). Grip goes in `variant`.        *
+ * ------------------------------------------------------------------ */
+
+const JULY15_START = new Date(2026, 6, 15, 19, 0).getTime();
+
+export const JULY15_SESSION: Session = {
+  id: "sess-freestyle-2026-07-15",
+  date: "2026-07-15",
+  startedAt: JULY15_START,
+  completedAt: JULY15_START + 45 * 60 * 1000,
+  source: "app",
+  kind: "strength",
+  durationSec: 45 * 60,
+};
+
+export const JULY15_LOGS: SetLog[] = (
+  [
+    // 下跪卷腹 (kneeling cable crunch)
+    ["cableCrunch", 110, 10],
+    ["cableCrunch", 110, 10],
+    ["cableCrunch", 100, 5],
+    ["cableCrunch", 120, 10],
+    // bodyweight pull-ups, narrow grip
+    ["pulldown", undefined, 3, "narrow"],
+    ["pulldown", undefined, 2, "narrow"],
+    ["pulldown", undefined, 2, "narrow"],
+    ["pulldown", undefined, 1, "narrow"],
+    // band/machine-assisted pull-ups (weight = assistance)
+    ["pulldown", 120, 15, "narrow"],
+    ["pulldown", 90, 10, "narrow"],
+    ["pulldown", 90, 12, "wide"],
+    ["pulldown", 90, 10, "wide"],
+    // 下拉辫子 — rope pushdown
+    ["cableTri", 80, 8],
+    ["cableTri", 80, 8],
+  ] as [string, number | undefined, number, string?][]
+).map(([code, weight, reps, variant], i) => ({
+  id: `log-fs0715-${i}`,
+  sessionId: JULY15_SESSION.id,
+  exerciseId: `ex-${code}`,
+  setNumber: i + 1,
+  weight,
+  reps,
+  variant,
+  done: true,
+  timestamp: JULY15_START + (3 + i * 3) * 60 * 1000,
+}));
