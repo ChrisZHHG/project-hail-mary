@@ -129,6 +129,16 @@ export class HailMaryDB extends Dexie {
     /* v7 — per-exercise machine-setup memory (seat/pulley/grip …). */
     this.version(7).stores({ exerciseGear: "exerciseId" });
 
+    /* v8 — layered exercise media (wger.de line-art now, coach videos later).
+     * Refresh catalog with `media` fields; `ex-lib-*` rows (added from the
+     * curated library by the user) are untouched — existing installs get
+     * images on their current machines. */
+    this.version(8)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table("exercises").bulkPut(SEED_EXERCISES);
+      });
+
     this.on("populate", () => this.seed());
   }
 

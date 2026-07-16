@@ -9,8 +9,9 @@ import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
 import { sumVolume, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
 import type { Exercise } from "@/lib/data/types";
+import { LIBRARY } from "@/lib/library";
 import BodyHeatmap from "@/components/BodyHeatmap";
-import ExerciseIcon from "@/components/ExerciseIcon";
+import ExerciseMedia from "@/components/ExerciseMedia";
 import WeightControl from "@/components/WeightControl";
 import Stepper from "@/components/Stepper";
 import RirSelector from "@/components/RirSelector";
@@ -78,6 +79,13 @@ export default function FreestylePage() {
   const muscles = [...new Set([...CANONICAL, ...fromData])];
   const volume = sumVolume(sessionLogs);
   const doneSets = sessionLogs.filter((l) => l.done).length;
+
+  // curated library — offered for muscles once its exercises aren't already
+  // in the catalog (added once, then it behaves like any other exercise)
+  const existingIds = new Set(exercises.map((e) => e.id));
+  const libraryForMuscle = LIBRARY.filter(
+    (e) => e.targetMuscle === muscle && !existingIds.has(`ex-lib-${e.slug}`)
+  );
 
   // exercises already logged this session surface as active cards
   const loggedExIds = [...new Set(sessionLogs.map((l) => l.exerciseId).filter(Boolean))] as string[];
@@ -149,12 +157,14 @@ export default function FreestylePage() {
           ))}
         </div>
 
-        {muscle && pickable.filter((e) => e.targetMuscle === muscle).length === 0 ? (
+        {muscle &&
+        pickable.filter((e) => e.targetMuscle === muscle).length === 0 &&
+        libraryForMuscle.length === 0 ? (
           <p className="mt-3 border-t border-line pt-3 text-center text-[0.8rem] text-faint">
             {t("noExercisesYet")}
           </p>
         ) : null}
-        {muscle ? (
+        {muscle && pickable.filter((e) => e.targetMuscle === muscle).length > 0 ? (
           <ul className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
             {pickable
               .filter((e) => e.targetMuscle === muscle)
@@ -177,7 +187,7 @@ export default function FreestylePage() {
                       }`}
                     >
                       <span className="text-cyan">
-                        <ExerciseIcon pattern={e.pattern} />
+                        <ExerciseMedia media={e.media} pattern={e.pattern} size="sm" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-[0.9rem] font-semibold text-ink">
@@ -196,6 +206,44 @@ export default function FreestylePage() {
                 );
               })}
           </ul>
+        ) : null}
+
+        {muscle && libraryForMuscle.length > 0 ? (
+          <div className="mt-3 border-t border-line pt-3">
+            <h3 className="eyebrow mb-2">{t("fromLibrary")}</h3>
+            <ul className="flex flex-col gap-2">
+              {libraryForMuscle.map((e) => {
+                const names = exerciseNames(e, lang);
+                return (
+                  <li key={e.slug}>
+                    <button
+                      onClick={() => {
+                        void db.exercises.add({
+                          id: `ex-lib-${e.slug}`,
+                          name: e.name,
+                          aliasZh: e.aliasZh,
+                          pattern: e.pattern,
+                          targetMuscle: e.targetMuscle,
+                          category: "isolation",
+                          isWeighted: e.isWeighted,
+                          media: e.media,
+                        });
+                      }}
+                      className="tap flex w-full items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-left text-muted transition hover:border-cyan/40"
+                    >
+                      <span className="text-muted">
+                        <ExerciseMedia media={e.media} pattern={e.pattern} size="sm" />
+                      </span>
+                      <span className="min-w-0 flex-1 text-[0.9rem] font-semibold">
+                        {names.primary}
+                      </span>
+                      <span className="shrink-0 text-lg text-faint">+</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         ) : null}
       </section>
 
@@ -286,7 +334,7 @@ function FreestyleCard({
     <section className={`panel p-4 ${flash ? "animate-logged" : ""}`}>
       <header className="flex items-center gap-3">
         <span className="text-cyan">
-          <ExerciseIcon pattern={exercise.pattern} />
+          <ExerciseMedia media={exercise.media} pattern={exercise.pattern} size="sm" />
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold leading-tight text-ink">{names.primary}</h3>

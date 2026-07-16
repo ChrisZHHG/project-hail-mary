@@ -10,7 +10,7 @@ import { exerciseNames, useNameLang, useUnit, useWeightFmt, lbsToDisplay, displa
 import UnitToggle from "@/components/UnitToggle";
 import { useT, useMuscleName } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
-import ExerciseIcon from "@/components/ExerciseIcon";
+import ExerciseMedia from "@/components/ExerciseMedia";
 import MiniTrend from "@/components/MiniTrend";
 
 /** Gym-floor lookup: "what did I do last time on this machine?"
@@ -204,7 +204,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
       <button className="tap w-full text-left" onClick={() => setOpen((o) => !o)}>
         <div className="flex items-start justify-between gap-3">
           <span className="mt-0.5 shrink-0 text-cyan">
-            <ExerciseIcon pattern={exercise.pattern} />
+            <ExerciseMedia media={exercise.media} pattern={exercise.pattern} size="sm" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[0.95rem] font-semibold text-ink">{names.primary}</p>

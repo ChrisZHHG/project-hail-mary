@@ -21,6 +21,8 @@ export interface Exercise {
   link?: string;
   /** Whether a weight is logged (false for cardio / bodyweight isometrics). */
   isWeighted: boolean;
+  /** Visual reference, best available layer: coach video > line-art image > pictogram fallback. */
+  media?: { kind: "video" | "image"; src: string; attribution?: string };
 }
 
 export interface Program {

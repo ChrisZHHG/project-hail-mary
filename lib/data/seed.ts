@@ -15,6 +15,16 @@ import type {
 
 const PROGRAM_ID = "prog-fullbody";
 
+const WGER_ATTRIBUTION = "wger.de contributors · CC-BY-SA";
+/** Shorthand: image entry for a matched wger download (see
+ *  scripts/fetch-wger-images.mjs). Best-effort visual reference — falls
+ *  back to the ExerciseIcon pictogram wherever unset. */
+const img = (slug: string): Exercise["media"] => ({
+  kind: "image",
+  src: `/exercises/${slug}.png`,
+  attribution: WGER_ATTRIBUTION,
+});
+
 // Exercise catalog (deduped across the 3 days). Keyed by short code.
 const CATALOG = {
   cars: {
@@ -43,6 +53,7 @@ const CATALOG = {
     targetMuscle: "Back",
     category: "compound",
     isWeighted: true,
+    media: img("pulldown"),
   },
   row: {
     name: "DB Chest-Supported Upper Back Row",
@@ -51,6 +62,7 @@ const CATALOG = {
     targetMuscle: "Back",
     category: "compound",
     isWeighted: true,
+    media: img("row"),
   },
   press: {
     name: "Machine Chest Press OR BB/DB Bench Press",
@@ -59,6 +71,7 @@ const CATALOG = {
     targetMuscle: "Chest",
     category: "compound",
     isWeighted: true,
+    media: img("press"),
   },
   preacher: {
     name: "DB Preacher Curl",
@@ -67,6 +80,7 @@ const CATALOG = {
     targetMuscle: "Biceps",
     category: "isolation",
     isWeighted: true,
+    media: img("preacher"),
   },
   squat: {
     name: "BB Squat OR Leg Press",
@@ -75,6 +89,7 @@ const CATALOG = {
     targetMuscle: "Quads",
     category: "compound",
     isWeighted: true,
+    media: img("squat"),
   },
   legCurl: {
     name: "Leg Curl",
@@ -84,6 +99,7 @@ const CATALOG = {
     category: "isolation",
     isWeighted: true,
     link: "https://youtube.com/shorts/Ymd77MLt_Oc",
+    media: img("leg-curl"),
   },
   legExt: {
     name: "Leg Extension",
@@ -93,6 +109,7 @@ const CATALOG = {
     category: "isolation",
     isWeighted: true,
     link: "https://youtu.be/vluYLwdr5pw",
+    media: img("leg-ext"),
   },
   toePress: {
     name: "Toe Press",
@@ -103,6 +120,7 @@ const CATALOG = {
     isWeighted: true,
     biomechanicNotes:
       "Hold the stretch at the bottom of each rep for 3-5 seconds. Then come only to neutral — not up onto your toes.",
+    media: img("toe-press"),
   },
   calfRaise: {
     name: "Straight-Legged Calf Raise",
@@ -113,6 +131,7 @@ const CATALOG = {
     isWeighted: true,
     biomechanicNotes:
       "Elevate your foot on a plate/step/bench. Hold something with the other hand for stability. Full stretch at the bottom.",
+    media: img("calf-raise"),
   },
   triExt: {
     name: "Tricep Extension",
@@ -121,6 +140,7 @@ const CATALOG = {
     targetMuscle: "Triceps",
     category: "isolation",
     isWeighted: true,
+    media: img("tri-ext"),
   },
   cableTri: {
     name: "Cable Straight-Bar OR Rope Tricep Extension",
@@ -129,6 +149,7 @@ const CATALOG = {
     targetMuscle: "Triceps",
     category: "isolation",
     isWeighted: true,
+    media: img("cable-tri"),
   },
   latRaise: {
     name: "Cable Lateral Raise",
@@ -137,6 +158,7 @@ const CATALOG = {
     targetMuscle: "Shoulders",
     category: "isolation",
     isWeighted: true,
+    media: img("lat-raise"),
   },
   saLatRaise: {
     name: "Single-Arm Cable Lateral Raise",
@@ -145,6 +167,7 @@ const CATALOG = {
     targetMuscle: "Shoulders",
     category: "isolation",
     isWeighted: true,
+    media: img("sa-lat-raise"),
   },
   cableCrunch: {
     name: "Cable Crunch",
@@ -153,6 +176,7 @@ const CATALOG = {
     targetMuscle: "Core",
     category: "isolation",
     isWeighted: true,
+    media: img("cable-crunch"),
   },
   adductor: {
     name: "Adductor Yoga-Ball Isometric",
@@ -163,6 +187,7 @@ const CATALOG = {
     isWeighted: false,
     link: "https://youtube.com/shorts/WF4uuJw9uSo",
     biomechanicNotes: "4-second burst as hard as you can, 4-second rest. Repeat 4x.",
+    media: img("adductor"),
   },
   // --- Chris's freestyle back-day machines (reconstructed watch sessions;
   // --- not in Austin's program, but part of the real training history) ---
@@ -174,6 +199,7 @@ const CATALOG = {
     category: "compound",
     isWeighted: true,
     biomechanicNotes: "Right arm runs ~2 reps ahead of the left — log each arm as its own set.",
+    media: img("sa-row"),
   },
   seatedRow: {
     name: "Seated Cable Row",
@@ -182,6 +208,7 @@ const CATALOG = {
     targetMuscle: "Back",
     category: "compound",
     isWeighted: true,
+    media: img("seated-row"),
   },
   bike: {
     name: "Exercise Bike — 20 Minutes",

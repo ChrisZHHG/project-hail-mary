@@ -90,6 +90,11 @@ const DICT = {
   bwChip: ["自重", "BW"],
   bwHint: ["按体重计容量", "counts bodyweight"],
   noExercisesYet: ["这个部位还没有动作 — 动作库功能马上来。", "No exercises here yet — the exercise library is coming."],
+  fromLibrary: ["从动作库添加", "Add from library"],
+  illustrationCredit: [
+    "动作插画来自 wger.de 社区 (CC-BY-SA)",
+    "Exercise illustrations by wger.de contributors (CC-BY-SA)",
+  ],
   weeklyVolume: ["每周容量", "Weekly volume"],
   thisWeekBar: ["本周", "this week"],
   trendLabel: ["最重一组走势", "Top-set trend"],

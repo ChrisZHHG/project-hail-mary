@@ -20,6 +20,9 @@ export default function MethodPage() {
       <p className="px-1 text-center text-[0.7rem] uppercase tracking-wider text-faint">
         Method by Austin Johansen
       </p>
+      <p className="px-1 text-center text-[0.6rem] text-faint">
+        Exercise illustrations © wger.de contributors · CC-BY-SA 动作插画来自 wger.de 社区
+      </p>
     </div>
   );
 }
