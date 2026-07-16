@@ -9,12 +9,12 @@
  */
 export const BRAND = {
   /** Working display name (placeholder until Austin + Chris decide). */
-  name: "Hail Mary",
+  name: "Train with Intention & Attention",
   /** Short name for the home-screen icon (<= 12 chars looks best). */
-  shortName: "Hail Mary",
+  shortName: "Intention",
   /** One-line positioning shown under the wordmark / in metadata.
    *  Ethos: train with intention + attention — every rep on purpose. */
-  tagline: "Train with intention.",
+  tagline: "Project Hail Mary",
   /** Longer description for the PWA manifest + SEO. */
   description:
     "Train with intention and attention. A thumb-friendly S&C logger with smart defaults and hardcore coaching cues — every rep on purpose.",

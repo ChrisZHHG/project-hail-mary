@@ -81,3 +81,35 @@ export function useVolumeFmt(): (lbs: number) => string {
   const u = useUnit();
   return (lbs) => fmtVolume(u === "kg" ? lbs / LBS_PER_KG : lbs);
 }
+
+/* --------------------------- body profile --------------------------- */
+
+const BW_KEY = "phm-bodyweight-lbs";
+const bwListeners = new Set<() => void>();
+let bwValue: number | null =
+  typeof window !== "undefined" && localStorage.getItem(BW_KEY)
+    ? Number(localStorage.getItem(BW_KEY))
+    : null;
+
+export function setBodyweightLbs(lbs: number | null) {
+  bwValue = lbs;
+  if (typeof window !== "undefined") {
+    if (lbs == null) localStorage.removeItem(BW_KEY);
+    else localStorage.setItem(BW_KEY, String(lbs));
+  }
+  bwListeners.forEach((fn) => fn());
+}
+
+/** Bodyweight in canonical lbs — used to give BW sets (pull-ups) real tonnage. */
+export function useBodyweightLbs(): number | null {
+  return useSyncExternalStore(
+    (fn) => {
+      bwListeners.add(fn);
+      return () => {
+        bwListeners.delete(fn);
+      };
+    },
+    () => bwValue,
+    () => null
+  );
+}

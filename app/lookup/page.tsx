@@ -11,6 +11,7 @@ import UnitToggle from "@/components/UnitToggle";
 import { useT, useMuscleName } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 import ExerciseIcon from "@/components/ExerciseIcon";
+import MiniTrend from "@/components/MiniTrend";
 
 /** Gym-floor lookup: "what did I do last time on this machine?"
  *  Search by name or tap a muscle-group chip → last top set + recent history,
@@ -196,6 +197,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
   const t = useT();
   const muscleName = useMuscleName();
   const fw = useWeightFmt();
+  const unitG = useUnit();
   const names = exerciseNames(exercise, lang);
   return (
     <li className="panel p-4">
@@ -227,7 +229,20 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
       </button>
       {open && recent.length > 0 ? (
         <div className="mt-3 border-t border-line pt-2">
-          <p className="eyebrow mb-1.5">{t("recentSessions")}</p>
+          {m.series.filter((s) => s.weight != null).length >= 3 ? (
+            <>
+              <p className="eyebrow mb-1">{t("trendLabel")}</p>
+              <MiniTrend
+                points={m.series
+                  .filter((s) => s.weight != null)
+                  .map((s) => ({
+                    label: s.date.slice(5).replace("-", "/"),
+                    value: lbsToDisplay(s.weight!, unitG),
+                  }))}
+              />
+            </>
+          ) : null}
+          <p className="eyebrow mb-1.5 mt-2">{t("recentSessions")}</p>
           <ul className="flex flex-col gap-1">
             {recent.map((r) => (
               <EditableEntry key={r.id} entry={r} lang={lang} />

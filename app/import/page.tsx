@@ -6,7 +6,7 @@ import { db } from "@/lib/data/db";
 import { parseWatchRows, toSession, watchSessionId } from "@/lib/data/watchCsv";
 import { fmtDayLong } from "@/lib/dates";
 import { downloadBackup, restoreBackup } from "@/lib/backup";
-import { useNameLang } from "@/lib/prefs";
+import { useNameLang, useUnit, useBodyweightLbs, setBodyweightLbs, lbsToDisplay, displayToLbs } from "@/lib/prefs";
 import { useT } from "@/lib/i18n";
 
 /** Manual bridge for watch data until a real HealthKit integration exists:
@@ -96,8 +96,43 @@ export default function ImportPage() {
 
       <p className="text-center text-[0.65rem] leading-relaxed text-faint">{t("roadmapNote")}</p>
 
+      <ProfileSection />
+
       <BackupSection />
     </div>
+  );
+}
+
+/** Body profile — bodyweight gives BW movements (pull-ups) real tonnage. */
+function ProfileSection() {
+  const t = useT();
+  const unit = useUnit();
+  const bw = useBodyweightLbs();
+  return (
+    <section className="panel mt-2 p-4">
+      <h2 className="eyebrow mb-1">{t("profileTitle")}</h2>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-ink">{t("bodyweightLabel")}</p>
+          <p className="mt-0.5 text-[0.7rem] leading-snug text-faint">{t("bodyweightHint")}</p>
+        </div>
+        <div className="flex shrink-0 items-baseline gap-1">
+          <input
+            type="number"
+            inputMode="decimal"
+            value={bw != null ? lbsToDisplay(bw, unit) : ""}
+            placeholder={unit === "kg" ? "70" : "155"}
+            onChange={(e) =>
+              setBodyweightLbs(
+                e.target.value === "" ? null : displayToLbs(Number(e.target.value), unit)
+              )
+            }
+            className="tnum w-20 rounded-lg border border-line bg-void px-2 py-1.5 text-right text-xl font-bold text-cyan placeholder:text-faint focus:border-cyan focus:outline-none"
+          />
+          <span className="text-xs text-faint">{unit}</span>
+        </div>
+      </div>
+    </section>
   );
 }
 

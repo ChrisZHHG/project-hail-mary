@@ -15,7 +15,7 @@ import WeightControl from "@/components/WeightControl";
 import Stepper from "@/components/Stepper";
 import RirSelector from "@/components/RirSelector";
 import LangToggle from "@/components/LangToggle";
-import { exerciseNames, useNameLang, useUnit, useWeightFmt, useVolumeFmt, lbsToDisplay } from "@/lib/prefs";
+import { exerciseNames, useNameLang, useUnit, useWeightFmt, useVolumeFmt, lbsToDisplay, useBodyweightLbs } from "@/lib/prefs";
 import UnitToggle from "@/components/UnitToggle";
 import { useT, useMuscleName } from "@/lib/i18n";
 
@@ -32,6 +32,7 @@ export default function FreestylePage() {
   const muscleName = useMuscleName();
   const unit = useUnit();
   const fw = useWeightFmt();
+  const bodyweight = useBodyweightLbs();
   const fv = useVolumeFmt();
 
   useEffect(() => {
@@ -69,7 +70,11 @@ export default function FreestylePage() {
   const pickable = exercises.filter(
     (e) => e.category !== "cardio" && e.category !== "mobility"
   );
-  const muscles = [...new Set(pickable.map((e) => e.targetMuscle))];
+  // Full canonical body map — muscles without exercises still show (empty-state
+  // hint) so "I can't find X" never happens silently.
+  const CANONICAL = ["Back", "Chest", "Shoulders", "Biceps", "Triceps", "Forearms", "Core", "Quads", "Hamstrings", "Glutes", "Adductors", "Calves"];
+  const fromData = [...new Set(pickable.map((e) => e.targetMuscle))];
+  const muscles = [...new Set([...CANONICAL, ...fromData])];
   const volume = sumVolume(sessionLogs);
   const doneSets = sessionLogs.filter((l) => l.done).length;
 
@@ -143,6 +148,11 @@ export default function FreestylePage() {
           ))}
         </div>
 
+        {muscle && pickable.filter((e) => e.targetMuscle === muscle).length === 0 ? (
+          <p className="mt-3 border-t border-line pt-3 text-center text-[0.8rem] text-faint">
+            {t("noExercisesYet")}
+          </p>
+        ) : null}
         {muscle ? (
           <ul className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
             {pickable
@@ -239,6 +249,7 @@ function FreestyleCard({
   const prefillRir = sessionLast?.rir ?? last?.rir;
   const unit = useUnit();
   const fw = useWeightFmt();
+  const bodyweight = useBodyweightLbs();
 
   /** ▲/▼ progress vs last time's top set — the coach's #1 rule. */
   function delta(w?: number, r?: number): { sign: "up" | "down" | "flat"; label: string } | null {
@@ -327,13 +338,27 @@ function FreestyleCard({
 
       <div className="mt-3 rounded-xl border border-line bg-abyss/60 p-3">
         {exercise.isWeighted ? (
-          <WeightControl
-            label={t("weight")}
-            value={weight}
-            placeholder={prefillW}
-            onChange={setWeight}
-            step={BRAND.weightStep}
-          />
+          <>
+            <WeightControl
+              label={t("weight")}
+              value={weight}
+              placeholder={prefillW}
+              onChange={setWeight}
+              step={BRAND.weightStep}
+            />
+            <button
+              type="button"
+              onClick={() => setWeight(bodyweight ?? undefined)}
+              className={`tap mt-2 rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-wider transition ${
+                weight != null && bodyweight != null && weight === bodyweight
+                  ? "border-cyan bg-cyan/15 text-cyan"
+                  : "border-line text-faint"
+              }`}
+            >
+              {t("bwChip")}
+              {bodyweight != null ? ` · ${fw(bodyweight)}` : ""}
+            </button>
+          </>
         ) : null}
         <div className={`flex justify-center ${exercise.isWeighted ? "mt-3" : ""}`}>
           <Stepper label={t("reps")} value={reps} placeholder={prefillR} onChange={setReps} step={1} accent="cyan" />

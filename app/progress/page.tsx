@@ -9,6 +9,7 @@ import VolumeTrend, { type TrendPoint } from "@/components/VolumeTrend";
 import MuscleLoad from "@/components/MuscleLoad";
 import BodyHeatmap from "@/components/BodyHeatmap";
 import LoadGauge from "@/components/LoadGauge";
+import WeeklyBars from "@/components/WeeklyBars";
 import { WEEKDAY_SHORT, WEEKDAY_ZH } from "@/lib/dates";
 import { useNameLang, useUnit, useVolumeFmt } from "@/lib/prefs";
 import { useT } from "@/lib/i18n";
@@ -116,6 +117,8 @@ export default function ProgressPage() {
         <h2 className="eyebrow mb-3">{t("volumePerSession")}</h2>
         <VolumeTrend points={points} />
       </section>
+
+      <WeeklyBars sessions={sessions} logs={logs} />
 
       <LoadGauge sessions={sessions} />
 

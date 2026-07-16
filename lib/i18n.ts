@@ -87,6 +87,15 @@ const DICT = {
   save: ["保存", "Save"],
   variantLabel: ["变体(握距等)", "variant (grip…)"],
   editedNote: ["点行内 ✎ 可修改历史记录", "tap ✎ on a row to edit history"],
+  bwChip: ["自重", "BW"],
+  bwHint: ["按体重计容量", "counts bodyweight"],
+  noExercisesYet: ["这个部位还没有动作 — 动作库功能马上来。", "No exercises here yet — the exercise library is coming."],
+  weeklyVolume: ["每周容量", "Weekly volume"],
+  thisWeekBar: ["本周", "this week"],
+  trendLabel: ["最重一组走势", "Top-set trend"],
+  profileTitle: ["个人档案", "Profile"],
+  bodyweightLabel: ["体重", "Bodyweight"],
+  bodyweightHint: ["用于自重动作(引体等)的容量计算。", "Used to count volume for bodyweight movements (pull-ups etc.)."],
   repsShort: ["次", "reps"],
 
   // lookup

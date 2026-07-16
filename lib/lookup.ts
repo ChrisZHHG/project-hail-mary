@@ -24,6 +24,8 @@ export interface ExerciseMemory {
   last?: ExerciseSetEntry;
   /** Best (top-weight) set per recent session, newest first, max 3. */
   recent: ExerciseSetEntry[];
+  /** Per-session top set, oldest → newest (max 12) — feeds the sparkline. */
+  series: ExerciseSetEntry[];
   totalSets: number;
 }
 
@@ -67,14 +69,14 @@ export function buildExerciseMemory(
         const cur = bySession.get(l.sessionId);
         if (!cur || (l.weight ?? 0) > (cur.weight ?? 0)) bySession.set(l.sessionId, l);
       }
-      const recent = [...bySession.values()]
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 3)
-        .map(entry);
+      const perSession = [...bySession.values()].sort((a, b) => b.timestamp - a.timestamp);
+      const recent = perSession.slice(0, 3).map(entry);
+      const series = perSession.slice(0, 12).reverse().map(entry);
       return {
         exercise,
         last: sets[0] ? entry(sets[0]) : undefined,
         recent,
+        series,
         totalSets: sets.length,
       };
     })
