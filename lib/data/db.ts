@@ -151,6 +151,14 @@ export class HailMaryDB extends Dexie {
         await tx.table("setLogs").bulkPut(JULY14_TOEPRESS_LOGS);
       });
 
+    /* v10 — wger line-art allowlist: only simple drawings render as images;
+     * anatomical matches (toe press, leg curl, …) fall back to pictograms. */
+    this.version(10)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table("exercises").bulkPut(SEED_EXERCISES);
+      });
+
     this.on("populate", () => this.seed());
   }
 
