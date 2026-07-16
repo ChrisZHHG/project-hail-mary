@@ -14,7 +14,7 @@ import { PRE_WORKOUT_PROTOCOL } from "@/lib/theory";
 import { useT, type I18nKey } from "@/lib/i18n";
 import ExecutionCard from "./ExecutionCard";
 import { fmtDayLong } from "@/lib/dates";
-import { useNameLang } from "@/lib/prefs";
+import { useNameLang, useUnit, useVolumeFmt } from "@/lib/prefs";
 
 const SECTION_LABEL: Record<WorkoutSection, I18nKey> = {
   warmup: "warmup",
@@ -29,6 +29,8 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const lang = useNameLang();
+  const unit = useUnit();
+  const fv = useVolumeFmt();
   const workout = useWorkout(workoutId);
   const instances = useExerciseInstances(workoutId);
   const logs = useSessionLogs(sessionId ?? undefined) ?? [];
@@ -80,8 +82,8 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
           </div>
           <div className="text-right">
             <div className="tnum text-2xl font-bold text-cyan text-glow-cyan">
-              {fmtVolume(volume)}
-              <span className="ml-1 text-xs font-normal text-faint">{BRAND.unit}</span>
+              {fv(volume)}
+              <span className="ml-1 text-xs font-normal text-faint">{unit}</span>
             </div>
             <p className="eyebrow">{doneSets} {t("setsLogged")}</p>
           </div>

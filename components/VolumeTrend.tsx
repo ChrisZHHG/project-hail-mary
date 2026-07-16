@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { fmtVolume } from "@/lib/volume";
 import { useT } from "@/lib/i18n";
+import { useUnit, useVolumeFmt } from "@/lib/prefs";
 
 export interface TrendPoint {
   label: string;
@@ -18,6 +19,8 @@ export interface TrendPoint {
  *  row below the plot (mobile-safe — no floating tooltip collisions). */
 export default function VolumeTrend({ points }: { points: TrendPoint[] }) {
   const t = useT();
+  const unit = useUnit();
+  const fv = useVolumeFmt();
   const [active, setActive] = useState<number | null>(null);
   if (!points.length) {
     return <p className="text-sm text-faint">{t("logToStart")}</p>;
@@ -82,11 +85,11 @@ export default function VolumeTrend({ points }: { points: TrendPoint[] }) {
         <p className="tnum min-h-4 text-[0.7rem] text-ink">
           {sel ? (
             <>
-              {sel.label} · {fmtVolume(sel.value)} lbs
+              {sel.label} · {fv(sel.value)} {unit}
               {sel.imported ? <span className="text-faint"> · {t("watchBadge")}</span> : null}
             </>
           ) : (
-            <span className="text-laser-soft">{t("peak")} {fmtVolume(max)}</span>
+            <span className="text-laser-soft">{t("peak")} {fv(max)}</span>
           )}
         </p>
         {hasImported ? (

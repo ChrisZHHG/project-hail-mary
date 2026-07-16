@@ -11,7 +11,7 @@ import {
 import { isWeekend } from "@/lib/data/repository";
 import { LEVEL_META, REC_ZH, REC_ZH_JOINT } from "@/lib/data/readiness";
 import { useT } from "@/lib/i18n";
-import { useNameLang } from "@/lib/prefs";
+import { useNameLang, useUnit, useVolumeFmt } from "@/lib/prefs";
 import { PRINCIPLES } from "@/lib/theory";
 import { sessionTonnageLbs, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
@@ -22,6 +22,8 @@ import { daysSinceBackup } from "@/lib/backup";
 export default function Home() {
   const t = useT();
   const lang = useNameLang();
+  const unit = useUnit();
+  const fv = useVolumeFmt();
   const workouts = useWorkouts();
   const weekly = useWeeklyReadiness();
   const completed = useCompletedSessions();
@@ -204,7 +206,7 @@ export default function Home() {
           <div className="text-right">
             {lastVolume > 0 ? (
               <div className="tnum text-xl font-bold text-cyan">
-                {fmtVolume(lastVolume)} <span className="text-xs font-normal text-faint">{BRAND.unit}</span>
+                {fv(lastVolume)} <span className="text-xs font-normal text-faint">{unit}</span>
               </div>
             ) : null}
             <p className="eyebrow text-cyan">{t("viewProgress")}</p>

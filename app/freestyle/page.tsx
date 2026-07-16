@@ -15,7 +15,8 @@ import WeightControl from "@/components/WeightControl";
 import Stepper from "@/components/Stepper";
 import RirSelector from "@/components/RirSelector";
 import LangToggle from "@/components/LangToggle";
-import { exerciseNames, useNameLang } from "@/lib/prefs";
+import { exerciseNames, useNameLang, useUnit, useWeightFmt, useVolumeFmt, lbsToDisplay } from "@/lib/prefs";
+import UnitToggle from "@/components/UnitToggle";
 import { useT, useMuscleName } from "@/lib/i18n";
 
 /** Freestyle logging — 自主训练. Pick a muscle on the body, recognize the
@@ -29,6 +30,9 @@ export default function FreestylePage() {
   const lang = useNameLang();
   const t = useT();
   const muscleName = useMuscleName();
+  const unit = useUnit();
+  const fw = useWeightFmt();
+  const fv = useVolumeFmt();
 
   useEffect(() => {
     let alive = true;
@@ -87,13 +91,14 @@ export default function FreestylePage() {
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl font-bold text-ink">{t("freestyleTitle")}</h1>
               <LangToggle />
+              <UnitToggle />
             </div>
             <p className="eyebrow mt-0.5">{t("freestyleHint")}</p>
           </div>
           <div className="text-right">
             <div className="tnum text-2xl font-bold text-cyan text-glow-cyan">
-              {fmtVolume(volume)}
-              <span className="ml-1 text-xs font-normal text-faint">{BRAND.unit}</span>
+              {fv(volume)}
+              <span className="ml-1 text-xs font-normal text-faint">{unit}</span>
             </div>
             <p className="eyebrow">{doneSets} {t("sets")}</p>
           </div>
@@ -170,7 +175,7 @@ export default function FreestylePage() {
                       </span>
                       <span className="tnum shrink-0 text-right text-[0.7rem] text-laser-soft">
                         {last
-                          ? `${t("last")} ${last.weight != null ? `${last.weight}${BRAND.unit}` : t("bw")}${
+                          ? `${t("last")} ${last.weight != null ? fw(last.weight) : t("bw")}${
                               last.reps != null ? `×${last.reps}` : ""
                             }`
                           : t("firstTime")}
@@ -232,14 +237,16 @@ function FreestyleCard({
   const prefillW = sessionLast?.weight ?? last?.weight ?? 50;
   const prefillR = sessionLast?.reps ?? last?.reps ?? 8;
   const prefillRir = sessionLast?.rir ?? last?.rir;
+  const unit = useUnit();
+  const fw = useWeightFmt();
 
   /** ▲/▼ progress vs last time's top set — the coach's #1 rule. */
   function delta(w?: number, r?: number): { sign: "up" | "down" | "flat"; label: string } | null {
     if (!last || (last.weight == null && last.reps == null)) return null;
     const lw = last.weight ?? 0;
     const cw = w ?? 0;
-    if (cw > lw) return { sign: "up", label: `▲ +${cw - lw} ${BRAND.unit}` };
-    if (cw < lw) return { sign: "down", label: `▼ ${cw - lw} ${BRAND.unit}` };
+    if (cw > lw) return { sign: "up", label: `▲ +${lbsToDisplay(cw - lw, unit)} ${unit}` };
+    if (cw < lw) return { sign: "down", label: `▼ ${lbsToDisplay(cw - lw, unit)} ${unit}` };
     const lr = last.reps ?? 0;
     const cr = r ?? 0;
     if (cr > lr) return { sign: "up", label: `▲ +${cr - lr} ${t("repsShort")}` };
@@ -281,7 +288,7 @@ function FreestyleCard({
 
       {last ? (
         <p className="tnum mt-2 text-[0.75rem] text-laser-soft">
-          {t("last")}: {last.weight != null ? `${last.weight}${BRAND.unit} × ` : ""}
+          {t("last")}: {last.weight != null ? `${fw(last.weight)} × ` : ""}
           {last.reps ?? "—"} · {t("beatIt")}
         </p>
       ) : (
@@ -298,7 +305,7 @@ function FreestyleCard({
           >
             <span className="eyebrow text-faint">{t("set")} {l.setNumber}{t("setUnit")}</span>
             <span className="tnum text-sm font-semibold text-ink">
-              {l.weight != null ? `${l.weight}${BRAND.unit} × ` : ""}
+              {l.weight != null ? `${fw(l.weight)} × ` : ""}
               {l.reps}
               {l.rir != null ? <span className="text-faint"> @{l.rir}</span> : null}
               {l.variant ? <span className="text-faint"> · {l.variant}</span> : null}
@@ -321,7 +328,7 @@ function FreestyleCard({
       <div className="mt-3 rounded-xl border border-line bg-abyss/60 p-3">
         {exercise.isWeighted ? (
           <WeightControl
-            label={`${t("weight")} (${BRAND.unit})`}
+            label={t("weight")}
             value={weight}
             placeholder={prefillW}
             onChange={setWeight}

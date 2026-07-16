@@ -7,7 +7,7 @@ import { repo } from "@/lib/data/repository";
 import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { methodTag, theoryForExercise } from "@/lib/theory";
-import { exerciseNames, useNameLang } from "@/lib/prefs";
+import { exerciseNames, useNameLang, useWeightFmt } from "@/lib/prefs";
 import { useT, useMuscleName } from "@/lib/i18n";
 import type { ExerciseInstance, SetLog } from "@/lib/data/types";
 import Stepper from "./Stepper";
@@ -41,6 +41,7 @@ export default function ExecutionCard({
   const t = useT();
   const muscleName = useMuscleName();
   const names = exerciseNames(exercise, lang);
+  const fw = useWeightFmt();
 
   const logs =
     useLiveQuery(
@@ -109,7 +110,6 @@ export default function ExecutionCard({
     setEditing((e) => new Set(e).add(n));
   }
 
-  const unit = BRAND.unit;
   const sessionSource = logs.filter((l) => l.done).sort((a, b) => b.setNumber - a.setNumber)[0];
   const prefillSrc = sessionSource ?? lastEntry;
 
@@ -154,7 +154,7 @@ export default function ExecutionCard({
       {lastEntry && (showWeight || showReps) ? (
         <p className="tnum mt-2 text-[0.75rem] text-laser-soft">
           {t("last")}:{" "}
-          {lastEntry.weight != null ? `${lastEntry.weight}${unit} × ` : ""}
+          {lastEntry.weight != null ? `${fw(lastEntry.weight)} × ` : ""}
           {lastEntry.reps ?? "—"}
           {lastEntry.rir != null ? ` @${lastEntry.rir} RIR` : ""}
         </p>
@@ -181,7 +181,7 @@ export default function ExecutionCard({
               >
                 <span className="eyebrow text-faint">{t("set")} {n}{t("setUnit")}</span>
                 <span className="tnum text-sm font-semibold text-ink">
-                  {log?.weight != null ? `${log.weight}${unit} × ` : ""}
+                  {log?.weight != null ? `${fw(log.weight)} × ` : ""}
                   {log?.reps ?? (isCardio ? t("doneShort") : "—")}
                   {log?.rir != null ? (
                     <span className="text-faint"> @{log.rir} RIR</span>
@@ -213,7 +213,7 @@ export default function ExecutionCard({
 
               {showWeight ? (
                 <WeightControl
-                  label={`${t("weight")} (${unit})`}
+                  label={t("weight")}
                   value={draft.weight}
                   placeholder={prefillSrc?.weight ?? 50}
                   onChange={(v) => setDraft(n, { weight: v })}

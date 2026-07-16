@@ -6,7 +6,8 @@ import { db } from "@/lib/data/db";
 import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
 import { BRAND } from "@/lib/brand";
-import { exerciseNames, useNameLang } from "@/lib/prefs";
+import { exerciseNames, useNameLang, useUnit, useWeightFmt, lbsToDisplay, displayToLbs } from "@/lib/prefs";
+import UnitToggle from "@/components/UnitToggle";
 import { useT, useMuscleName } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 import ExerciseIcon from "@/components/ExerciseIcon";
@@ -53,7 +54,10 @@ export default function LookupPage() {
           <p className="eyebrow">{t("memory")}</p>
           <h1 className="mt-1 text-2xl font-bold text-ink">{t("lastTimeOn")}</h1>
         </div>
-        <LangToggle />
+        <div className="flex items-center gap-2">
+          <LangToggle />
+          <UnitToggle />
+        </div>
       </header>
 
       <input
@@ -104,15 +108,19 @@ function EditableEntry({
   lang: "zh" | "en";
 }) {
   const t = useT();
+  const unit = useUnit();
+  const fw = useWeightFmt();
   const [editing, setEditing] = useState(false);
-  const [w, setW] = useState<string>(entry.weight?.toString() ?? "");
+  const [w, setW] = useState<string>(
+    entry.weight != null ? String(lbsToDisplay(entry.weight, unit)) : ""
+  );
   const [reps, setReps] = useState<string>(entry.reps?.toString() ?? "");
   const [rir, setRir] = useState<string>(entry.rir?.toString() ?? "");
   const [variant, setVariant] = useState<string>(entry.variant ?? "");
 
   async function saveEdit() {
     await db.setLogs.update(entry.id, {
-      weight: w.trim() === "" ? undefined : Number(w),
+      weight: w.trim() === "" ? undefined : displayToLbs(Number(w), unit),
       reps: reps.trim() === "" ? undefined : Number(reps),
       rir: rir.trim() === "" ? undefined : Number(rir),
       variant: variant.trim() || undefined,
@@ -132,7 +140,7 @@ function EditableEntry({
         <span>{entry.date ? fmtDayLong(entry.date, lang) : "—"}</span>
         <span className="ml-auto">
           {entry.estimated ? "~" : ""}
-          {entry.weight != null ? `${entry.weight} ${BRAND.unit}` : t("bw")}
+          {entry.weight != null ? fw(entry.weight) : t("bw")}
           {entry.reps != null ? ` × ${entry.reps}` : ""}
           {entry.rir != null ? ` @${entry.rir}` : ""}
           {entry.variant ? ` · ${entry.variant}` : ""}
@@ -154,7 +162,7 @@ function EditableEntry({
   return (
     <li className="rounded-xl border border-cyan/30 p-2.5">
       <div className="flex items-center gap-1.5">
-        <input inputMode="decimal" value={w} onChange={(e) => setW(e.target.value)} className={numInput} placeholder={BRAND.unit} aria-label="weight" />
+        <input inputMode="decimal" value={w} onChange={(e) => setW(e.target.value)} className={numInput} placeholder={unit} aria-label="weight" />
         <span className="text-faint">×</span>
         <input inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} className={numInput} placeholder="reps" aria-label="reps" />
         <span className="text-faint">@</span>
@@ -187,6 +195,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
   const lang = useNameLang();
   const t = useT();
   const muscleName = useMuscleName();
+  const fw = useWeightFmt();
   const names = exerciseNames(exercise, lang);
   return (
     <li className="panel p-4">
@@ -203,7 +212,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
             <div className="shrink-0 text-right">
               <p className="tnum text-lg font-bold text-cyan">
                 {last.estimated ? "~" : ""}
-                {last.weight != null ? `${last.weight} ${BRAND.unit}` : t("bw")}
+                {last.weight != null ? fw(last.weight) : t("bw")}
                 {last.reps != null ? <span className="text-ink"> × {last.reps}</span> : null}
               </p>
               <p className="tnum text-[0.65rem] text-faint">

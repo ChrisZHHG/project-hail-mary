@@ -10,7 +10,7 @@ import MuscleLoad from "@/components/MuscleLoad";
 import BodyHeatmap from "@/components/BodyHeatmap";
 import LoadGauge from "@/components/LoadGauge";
 import { WEEKDAY_SHORT, WEEKDAY_ZH } from "@/lib/dates";
-import { useNameLang } from "@/lib/prefs";
+import { useNameLang, useUnit, useVolumeFmt } from "@/lib/prefs";
 import { useT } from "@/lib/i18n";
 
 const shortDate = (d: string) => d.slice(5).replace("-", "/");
@@ -27,6 +27,8 @@ const fmtDur = (sec?: number) => {
 
 export default function ProgressPage() {
   const lang = useNameLang();
+  const unit = useUnit();
+  const fv = useVolumeFmt();
   const t = useT();
   const sessions = useLiveQuery(
     () =>
@@ -106,8 +108,8 @@ export default function ProgressPage() {
 
       <div className="grid grid-cols-3 gap-2">
         <Stat label={t("sessionsStat")} value={String(sessions.length)} unit={`${strength.length} ${t("strengthCount")}`} />
-        <Stat label={t("trackedVol")} value={`${fmtVolume(total)}`} unit={BRAND.unit} />
-        <Stat label={t("bestSession")} value={`${fmtVolume(best)}`} unit={BRAND.unit} />
+        <Stat label={t("trackedVol")} value={`${fv(total)}`} unit={unit} />
+        <Stat label={t("bestSession")} value={`${fv(best)}`} unit={unit} />
       </div>
 
       <section className="panel p-4">
@@ -154,7 +156,7 @@ export default function ProgressPage() {
                 <div className="tnum shrink-0 text-right text-[0.7rem]">
                   {vol > 0 ? (
                     <p className="text-cyan">
-                      {approx ? "~" : ""}{fmtVolume(vol)} {BRAND.unit}
+                      {approx ? "~" : ""}{fv(vol)} {unit}
                     </p>
                   ) : null}
                   {s.kcal ? <p className="text-faint">{s.kcal} kcal</p> : null}

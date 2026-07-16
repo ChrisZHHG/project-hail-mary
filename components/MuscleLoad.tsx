@@ -1,9 +1,10 @@
 "use client";
 
-import { fmtVolume } from "@/lib/volume";
+import { useVolumeFmt } from "@/lib/prefs";
 
 /** Horizontal "heatmap" of tonnage per muscle group — where the work landed. */
 export default function MuscleLoad({ data }: { data: { muscle: string; volume: number }[] }) {
+  const fv = useVolumeFmt();
   if (!data.length) {
     return <p className="text-sm text-faint">No weighted volume logged yet.</p>;
   }
@@ -16,7 +17,7 @@ export default function MuscleLoad({ data }: { data: { muscle: string; volume: n
           <div key={d.muscle}>
             <div className="flex justify-between text-[0.78rem]">
               <span className="text-muted">{d.muscle}</span>
-              <span className="tnum text-faint">{fmtVolume(d.volume)}</span>
+              <span className="tnum text-faint">{fv(d.volume)}</span>
             </div>
             <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-elevated">
               <div
