@@ -6,9 +6,9 @@ import { db } from "@/lib/data/db";
 import { repo } from "@/lib/data/repository";
 import { BRAND } from "@/lib/brand";
 import Link from "next/link";
-import { methodTag, theoryForExercise } from "@/lib/theory";
+import { theoryForExercise } from "@/lib/theory";
 import { exerciseNames, useNameLang, useWeightFmt } from "@/lib/prefs";
-import { useT, useMuscleName } from "@/lib/i18n";
+import { useT, useMuscleName, useCardioSpecLabel } from "@/lib/i18n";
 import type { ExerciseInstance, SetLog } from "@/lib/data/types";
 import Stepper from "./Stepper";
 import WeightControl from "./WeightControl";
@@ -23,12 +23,23 @@ const firstNum = (s?: string) => {
   return m ? Number(m[0]) : undefined;
 };
 
+function methodTagKey(name: string, category: string): "methodIsometric" | "methodMobility" | "methodStretch" | null {
+  const n = name.toLowerCase();
+  if (n.includes("isometric") || n.includes("burst")) return "methodIsometric";
+  if (n.includes("cars") || category === "mobility") return "methodMobility";
+  if (n.includes("calf") || n.includes("toe press")) return "methodStretch";
+  return null;
+}
+
 export default function ExecutionCard({
   instance,
   sessionId,
+  ensureSession,
 }: {
   instance: ExerciseInstance;
-  sessionId: string;
+  sessionId: string | null;
+  /** Creates/resumes the session on first log so browsing alone leaves no open shell. */
+  ensureSession: () => Promise<string>;
 }) {
   const { exercise } = instance;
   const isCardio = exercise.category === "cardio";
@@ -36,28 +47,31 @@ export default function ExecutionCard({
   const repsNumeric = /^\d+(-\d+)?$/.test(instance.targetRepsRange);
   const showReps = !isCardio && repsNumeric;
   const showRir = !!instance.targetRir;
-  const mTag = methodTag(exercise.name, exercise.category);
+  const tagKey = methodTagKey(exercise.name, exercise.category);
   const relatedTheory = theoryForExercise(exercise.id, exercise.targetMuscle);
   const lang = useNameLang();
   const t = useT();
   const muscleName = useMuscleName();
+  const cardioSpecLabel = useCardioSpecLabel();
   const names = exerciseNames(exercise, lang);
   const fw = useWeightFmt();
-
+  const mTag = tagKey ? t(tagKey) : null;
   const logs =
     useLiveQuery(
       () =>
-        db.setLogs
-          .where("sessionId")
-          .equals(sessionId)
-          .and((l) => l.workoutExerciseId === instance.id)
-          .sortBy("setNumber"),
+        sessionId
+          ? db.setLogs
+              .where("sessionId")
+              .equals(sessionId)
+              .and((l) => l.workoutExerciseId === instance.id)
+              .sortBy("setNumber")
+          : Promise.resolve([] as SetLog[]),
       [sessionId, instance.id]
     ) ?? [];
 
   // Previous *session* entry for the "last time" hint + cold prefill.
   const lastEntry = useLiveQuery(
-    () => repo.getLastEntry(instance.id, sessionId),
+    () => repo.getLastEntry(instance.id, sessionId ?? undefined),
     [instance.id, sessionId]
   );
 
@@ -78,6 +92,7 @@ export default function ExecutionCard({
     setDrafts((d) => ({ ...d, [n]: { ...d[n], ...patch } }));
 
   async function logSet(n: number) {
+    const sid = await ensureSession();
     // most recent done set in THIS session feeds the next set's prefill
     const sessionSource = logs.filter((l) => l.done).sort((a, b) => b.setNumber - a.setNumber)[0];
     const src = sessionSource ?? lastEntry;
@@ -88,7 +103,7 @@ export default function ExecutionCard({
     const rir = showRir ? (d.rir ?? src?.rir ?? targetRir) : undefined;
     await repo.upsertSet({
       id: existing?.id,
-      sessionId,
+      sessionId: sid,
       workoutExerciseId: instance.id,
       setNumber: n,
       weight,
@@ -144,7 +159,7 @@ export default function ExecutionCard({
             {muscleName(exercise.targetMuscle)}
             {" · "}
             {instance.targetSets} × {instance.targetRepsRange}
-            {instance.cardioSpec ? ` · ${instance.cardioSpec}` : ""}
+            {instance.cardioSpec ? ` · ${cardioSpecLabel(instance.cardioSpec)}` : ""}
           </p>
         </div>
         <div className="tnum shrink-0 text-right text-sm text-faint">
@@ -157,7 +172,7 @@ export default function ExecutionCard({
           {t("last")}:{" "}
           {lastEntry.weight != null ? `${fw(lastEntry.weight)} × ` : ""}
           {lastEntry.reps ?? "—"}
-          {lastEntry.rir != null ? ` @${lastEntry.rir} RIR` : ""}
+          {lastEntry.rir != null ? ` @${lastEntry.rir} ${t("rir")}` : ""}
         </p>
       ) : null}
 
@@ -186,7 +201,7 @@ export default function ExecutionCard({
                   {log?.weight != null ? `${fw(log.weight)} × ` : ""}
                   {log?.reps ?? (isCardio ? t("doneShort") : "—")}
                   {log?.rir != null ? (
-                    <span className="text-faint"> @{log.rir} RIR</span>
+                    <span className="text-faint"> @{log.rir} {t("rir")}</span>
                   ) : null}
                 </span>
                 <span className="text-go">✓</span>

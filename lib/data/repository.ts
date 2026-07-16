@@ -50,6 +50,11 @@ export interface Repository {
   /** Freestyle = a session with no program workout; sets log by exerciseId. */
   startFreestyleSession(): Promise<Session>;
   completeSession(sessionId: string): Promise<void>;
+  /**
+   * Open sessions from a previous calendar day: complete if they have any
+   * done sets, otherwise delete the empty shell. Idempotent.
+   */
+  cleanupStaleOpenSessions(): Promise<void>;
   getSession(sessionId: string): Promise<Session | undefined>;
   getSetLogs(sessionId: string): Promise<SetLog[]>;
   upsertSet(log: Omit<SetLog, "id" | "timestamp"> & { id?: string }): Promise<SetLog>;
@@ -136,6 +141,22 @@ class DexieRepository implements Repository {
 
   async completeSession(sessionId: string) {
     await db.sessions.update(sessionId, { completedAt: Date.now() });
+  }
+
+  async cleanupStaleOpenSessions() {
+    const todayStr = today();
+    const open = await db.sessions
+      .filter((s) => s.completedAt == null && s.source !== "watch")
+      .toArray();
+    for (const s of open) {
+      if (s.date >= todayStr) continue;
+      const logs = await db.setLogs.where("sessionId").equals(s.id).toArray();
+      if (logs.some((l) => l.done)) {
+        await db.sessions.update(s.id, { completedAt: Date.now() });
+      } else {
+        await db.sessions.delete(s.id);
+      }
+    }
   }
 
   getSession(sessionId: string) {

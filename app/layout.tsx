@@ -39,7 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="min-h-full">
         <div className="starfield" aria-hidden />
         <ServiceWorkerRegister />
-        <main className="mx-auto w-full max-w-md px-4 pb-28 pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-[calc(4.25rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
           {children}
         </main>
         <BottomNav />

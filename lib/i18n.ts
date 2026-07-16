@@ -34,6 +34,20 @@ const DICT = {
   sets: ["组", "sets"],
   setsLogged: ["组已记录", "sets logged"],
   inProgress: ["进行中", "in progress"],
+  rir: ["RIR", "RIR"],
+  rirTarget: ["目标 {n}", "target {n}"],
+  methodIsometric: ["等长", "ISOMETRIC"],
+  methodMobility: ["灵活性 · FRC", "MOBILITY · FRC"],
+  methodStretch: ["拉伸 · SMH", "STRETCH · SMH"],
+  methodBy: ["方法来自 Austin Johansen", "Method by Austin Johansen"],
+  methodEyebrow: ["为什么这样安排", "Why it's built this way"],
+  methodPageDesc: [
+    "计划背后的知识 — 原则、纠正方案与日常习惯。相关动作在记录页会标 📖。",
+    "The knowledge behind the plan — principles, corrective protocols, and daily habits. Linked movements show a 📖 in the logger.",
+  ],
+  coachEyebrow: ["教练视图 · 只读", "Coach view · read-only"],
+  coachClients: ["学员", "Clients"],
+  cardioZone2: ["2区有氧", "Zone 2 Cardio"],
 
   // today
   weeklyCheckin: ["每周打卡", "Weekly check-in"],
@@ -203,6 +217,10 @@ const DICT = {
   ],
   exportBackup: ["导出备份", "Export backup"],
   restore: ["恢复…", "Restore…"],
+  refreshApp: ["刷新应用", "Refresh app"],
+  refreshAppHint: ["清缓存并加载最新版（主屏幕 App 没有下拉刷新）", "Clear cache and load the latest version (home-screen app has no pull-to-refresh)"],
+  refreshing: ["正在刷新…", "Refreshing…"],
+  dataAndBackup: ["数据 · 备份 · 刷新", "Data · backup · refresh"],
 } as const;
 
 export type I18nKey = keyof typeof DICT;
@@ -240,4 +258,30 @@ export const MUSCLE_ZH: Record<string, string> = {
 export function useMuscleName(): (m: string) => string {
   const lang = useNameLang();
   return (m) => (lang === "zh" ? (MUSCLE_ZH[m] ?? m) : m);
+}
+
+/** Stored variant keys stay English (`right` / `narrow`); display is language-pure. */
+const VARIANT_LABEL: Record<string, [string, string]> = {
+  right: ["右", "right"],
+  left: ["左", "left"],
+  narrow: ["窄握", "narrow"],
+  wide: ["宽握", "wide"],
+};
+
+export function useVariantLabel(): (v: string) => string {
+  const lang = useNameLang();
+  return (v) => {
+    const pair = VARIANT_LABEL[v.toLowerCase()];
+    return pair ? pair[lang === "zh" ? 0 : 1] : v;
+  };
+}
+
+/** Map known English cardioSpec storage strings → localized chrome. */
+export function useCardioSpecLabel(): (spec?: string) => string | undefined {
+  const t = useT();
+  return (spec) => {
+    if (!spec) return undefined;
+    if (/zone\s*2/i.test(spec)) return t("cardioZone2");
+    return spec;
+  };
 }

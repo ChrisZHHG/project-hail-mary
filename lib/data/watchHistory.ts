@@ -169,3 +169,40 @@ export const JULY15_LOGS: SetLog[] = (
   done: true,
   timestamp: JULY15_START + (3 + i * 3) * 60 * 1000,
 }));
+
+/* ------------------------------------------------------------------ *
+ * July 14, 2026 — Toe Press backfill (Chris: ~110 probe then working   *
+ * sets at 90 lbs, one set each foot, ~6-8 reps → logged as 90×7).     *
+ * Independent completed session so it doesn't depend on which Full    *
+ * Body day was open; prefill still works via exerciseId.              *
+ * ------------------------------------------------------------------ */
+
+const JULY14_START = new Date(2026, 6, 14, 18, 0).getTime();
+
+export const JULY14_TOEPRESS_SESSION: Session = {
+  id: "sess-toepress-2026-07-14",
+  date: "2026-07-14",
+  startedAt: JULY14_START,
+  completedAt: JULY14_START + 20 * 60 * 1000,
+  source: "app",
+  kind: "strength",
+  durationSec: 20 * 60,
+};
+
+export const JULY14_TOEPRESS_LOGS: SetLog[] = (
+  [
+    ["toePress", 90, 7, "right"],
+    ["toePress", 90, 7, "left"],
+  ] as [string, number, number, string][]
+).map(([code, weight, reps, variant], i) => ({
+  id: `log-tp0714-${i}`,
+  sessionId: JULY14_TOEPRESS_SESSION.id,
+  exerciseId: `ex-${code}`,
+  setNumber: i + 1,
+  weight,
+  reps,
+  variant,
+  done: true,
+  estimated: true,
+  timestamp: JULY14_START + (5 + i * 4) * 60 * 1000,
+}));

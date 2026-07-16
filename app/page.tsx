@@ -229,6 +229,13 @@ export default function Home() {
       ) : null}
 
       <Link
+        href="/import"
+        className="text-center text-[0.7rem] uppercase tracking-wider text-faint transition hover:text-cyan"
+      >
+        {t("dataAndBackup")} →
+      </Link>
+
+      <Link
         href="/coach"
         className="pb-2 text-center text-[0.7rem] uppercase tracking-wider text-faint transition hover:text-cyan"
       >

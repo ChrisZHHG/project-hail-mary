@@ -11,10 +11,12 @@ import { buildExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
 import { BRAND } from "@/lib/brand";
 import LoadGauge from "@/components/LoadGauge";
+import { useT } from "@/lib/i18n";
 
 /** Read-only coach dashboard — one client card (Chris) for now, structured so
  *  a client list can wrap it once accounts/sync exist. */
 export default function CoachPage() {
+  const t = useT();
   const sessions = useLiveQuery(() => db.sessions.toArray(), []);
   const logs = useLiveQuery(() => db.setLogs.toArray(), []);
   const exercises = useLiveQuery(() => db.exercises.toArray(), []);
@@ -29,7 +31,7 @@ export default function CoachPage() {
   }, [exercises, wexs, logs, sessions]);
 
   if (!sessions || !logs || !exercises || !wexs || !workouts || !memories) {
-    return <p className="mt-10 text-center text-faint">Loading…</p>;
+    return <p className="mt-10 text-center text-faint">{t("loading")}</p>;
   }
 
   const completed = sessions.filter((s) => s.completedAt != null);
@@ -57,8 +59,8 @@ export default function CoachPage() {
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
-        <p className="eyebrow">Coach view · read-only</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">Clients</h1>
+        <p className="eyebrow">{t("coachEyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">{t("coachClients")}</h1>
       </header>
 
       {/* Client card */}

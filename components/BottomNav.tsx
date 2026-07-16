@@ -22,7 +22,7 @@ const TABS: Tab[] = [
   {
     href: "/train",
     label: "navTrain",
-    match: (p) => p === "/train" || p.startsWith("/session"),
+    match: (p) => p === "/train" || p.startsWith("/session") || p === "/freestyle",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
         <path d="M6.5 8.5v7M17.5 8.5v7M3.5 10.5v3M20.5 10.5v3M6.5 12h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

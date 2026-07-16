@@ -8,7 +8,7 @@ import { repo } from "@/lib/data/repository";
 import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
 import { sumVolume, fmtVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
-import type { Exercise } from "@/lib/data/types";
+import type { Exercise, SetLog } from "@/lib/data/types";
 import { LIBRARY } from "@/lib/library";
 import BodyHeatmap from "@/components/BodyHeatmap";
 import ExerciseMedia from "@/components/ExerciseMedia";
@@ -19,7 +19,7 @@ import GearChips from "@/components/GearChips";
 import LangToggle from "@/components/LangToggle";
 import { exerciseNames, useNameLang, useUnit, useWeightFmt, useVolumeFmt, lbsToDisplay, useBodyweightLbs } from "@/lib/prefs";
 import UnitToggle from "@/components/UnitToggle";
-import { useT, useMuscleName } from "@/lib/i18n";
+import { useT, useMuscleName, useVariantLabel } from "@/lib/i18n";
 
 /** Freestyle logging — 自主训练. Pick a muscle on the body, recognize the
  *  machine by picture + 中文名, and log against last time's numbers. The
@@ -27,6 +27,7 @@ import { useT, useMuscleName } from "@/lib/i18n";
 export default function FreestylePage() {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
   const [muscle, setMuscle] = useState<string | null>(null);
   const [active, setActive] = useState<string[]>([]); // exerciseIds being logged
   const lang = useNameLang();
@@ -39,11 +40,33 @@ export default function FreestylePage() {
 
   useEffect(() => {
     let alive = true;
-    repo.startFreestyleSession().then((s) => alive && setSessionId(s.id));
+    (async () => {
+      await repo.cleanupStaleOpenSessions();
+      const existing = await db.sessions
+        .filter((s) => !s.workoutId && s.completedAt == null && s.source !== "watch")
+        .first();
+      if (!alive) return;
+      if (existing) {
+        const existingLogs = await repo.getSetLogs(existing.id);
+        if (existingLogs.some((l) => l.done)) {
+          setSessionId(existing.id);
+        } else {
+          await db.sessions.delete(existing.id);
+        }
+      }
+      if (alive) setReady(true);
+    })();
     return () => {
       alive = false;
     };
   }, []);
+
+  const ensureSession = async () => {
+    if (sessionId) return sessionId;
+    const s = await repo.startFreestyleSession();
+    setSessionId(s.id);
+    return s.id;
+  };
 
   const exercises = useLiveQuery(() => db.exercises.toArray(), []);
   const wexs = useLiveQuery(() => db.workoutExercises.toArray(), []);
@@ -51,7 +74,7 @@ export default function FreestylePage() {
   const sessions = useLiveQuery(() => db.sessions.toArray(), []);
 
   const sessionLogs = useMemo(
-    () => (logs ?? []).filter((l) => l.sessionId === sessionId),
+    () => (logs ?? []).filter((l) => sessionId && l.sessionId === sessionId),
     [logs, sessionId]
   );
 
@@ -59,13 +82,13 @@ export default function FreestylePage() {
   const memory = useMemo(() => {
     if (!exercises || !wexs || !logs || !sessions) return undefined;
     const dates = new Map(sessions.map((s) => [s.id, s.date]));
-    const prior = logs.filter((l) => l.sessionId !== sessionId);
+    const prior = logs.filter((l) => !sessionId || l.sessionId !== sessionId);
     return new Map(
       buildExerciseMemory(exercises, wexs, prior, dates).map((m) => [m.exercise.id, m])
     );
   }, [exercises, wexs, logs, sessions, sessionId]);
 
-  if (!exercises || !memory || !sessionId) {
+  if (!exercises || !memory || !ready) {
     return <p className="mt-10 text-center text-faint">{t("calibrating")}</p>;
   }
 
@@ -92,7 +115,8 @@ export default function FreestylePage() {
   const activeIds = [...new Set([...loggedExIds, ...active])];
 
   async function finish() {
-    await repo.completeSession(sessionId!);
+    if (!sessionId || doneSets === 0) return;
+    await repo.completeSession(sessionId);
     router.push("/progress");
   }
 
@@ -128,6 +152,7 @@ export default function FreestylePage() {
             key={exId}
             exercise={ex}
             sessionId={sessionId}
+            ensureSession={ensureSession}
             memory={memory.get(exId)}
             onRemoveEmpty={() => setActive((a) => a.filter((id) => id !== exId))}
           />
@@ -264,11 +289,13 @@ export default function FreestylePage() {
 function FreestyleCard({
   exercise,
   sessionId,
+  ensureSession,
   memory,
   onRemoveEmpty,
 }: {
   exercise: Exercise;
-  sessionId: string;
+  sessionId: string | null;
+  ensureSession: () => Promise<string>;
   memory?: ExerciseMemory;
   onRemoveEmpty: () => void;
 }) {
@@ -279,15 +306,18 @@ function FreestyleCard({
   const lang = useNameLang();
   const t = useT();
   const names = exerciseNames(exercise, lang);
+  const variantLabel = useVariantLabel();
 
   const logs =
     useLiveQuery(
       () =>
-        db.setLogs
-          .where("sessionId")
-          .equals(sessionId)
-          .and((l) => l.exerciseId === exercise.id)
-          .sortBy("setNumber"),
+        sessionId
+          ? db.setLogs
+              .where("sessionId")
+              .equals(sessionId)
+              .and((l) => l.exerciseId === exercise.id)
+              .sortBy("setNumber")
+          : Promise.resolve([] as SetLog[]),
       [sessionId, exercise.id]
     ) ?? [];
 
@@ -315,10 +345,11 @@ function FreestyleCard({
   }
 
   async function logSet() {
+    const sid = await ensureSession();
     const w = exercise.isWeighted ? (weight ?? prefillW) : undefined;
     const r = reps ?? prefillR;
     await repo.upsertSet({
-      sessionId,
+      sessionId: sid,
       exerciseId: exercise.id,
       setNumber: logs.length + 1,
       weight: w,
@@ -370,7 +401,7 @@ function FreestyleCard({
               {l.weight != null ? `${fw(l.weight)} × ` : ""}
               {l.reps}
               {l.rir != null ? <span className="text-faint"> @{l.rir}</span> : null}
-              {l.variant ? <span className="text-faint"> · {l.variant}</span> : null}
+              {l.variant ? <span className="text-faint"> · {variantLabel(l.variant)}</span> : null}
             </span>
             {d ? (
               <span

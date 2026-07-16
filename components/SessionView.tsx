@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
 import { repo, today } from "@/lib/data/repository";
 import { useExerciseInstances, useSessionLogs, useWorkout } from "@/lib/data/hooks";
-import { sumVolume, fmtVolume } from "@/lib/volume";
-import { BRAND } from "@/lib/brand";
+import { sumVolume } from "@/lib/volume";
 import Link from "next/link";
 import type { ExerciseInstance, WorkoutSection } from "@/lib/data/types";
 import { PRE_WORKOUT_PROTOCOL } from "@/lib/theory";
@@ -28,6 +27,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
   const t = useT();
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
   const lang = useNameLang();
   const unit = useUnit();
   const fv = useVolumeFmt();
@@ -40,13 +40,34 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
   );
   const dayLabel = fmtDayLong(session?.date ?? today(), lang);
 
+  // Resume an in-progress session that already has sets; do not create empty shells.
   useEffect(() => {
     let alive = true;
-    repo.startSession(workoutId).then((s) => alive && setSessionId(s.id));
+    (async () => {
+      await repo.cleanupStaleOpenSessions();
+      const existing = await repo.getActiveSession(workoutId);
+      if (!alive) return;
+      if (existing) {
+        const existingLogs = await repo.getSetLogs(existing.id);
+        if (existingLogs.some((l) => l.done)) {
+          setSessionId(existing.id);
+        } else {
+          await db.sessions.delete(existing.id);
+        }
+      }
+      if (alive) setReady(true);
+    })();
     return () => {
       alive = false;
     };
   }, [workoutId]);
+
+  const ensureSession = useCallback(async () => {
+    if (sessionId) return sessionId;
+    const s = await repo.startSession(workoutId);
+    setSessionId(s.id);
+    return s.id;
+  }, [sessionId, workoutId]);
 
   const grouped = useMemo(() => {
     const by: Record<WorkoutSection, ExerciseInstance[]> = { warmup: [], main: [], cardio: [] };
@@ -64,7 +85,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
     router.push("/progress");
   }
 
-  if (!workout || !instances || !sessionId) {
+  if (!workout || !instances || !ready) {
     return <p className="mt-10 text-center text-faint">{t("calibrating")}</p>;
   }
 
@@ -113,7 +134,12 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
               </Link>
             ) : null}
             {grouped[section].map((instance) => (
-              <ExecutionCard key={instance.id} instance={instance} sessionId={sessionId} />
+              <ExecutionCard
+                key={instance.id}
+                instance={instance}
+                sessionId={sessionId}
+                ensureSession={ensureSession}
+              />
             ))}
           </div>
         ) : null
@@ -122,7 +148,8 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
       <button
         type="button"
         onClick={finish}
-        className="tap mt-2 w-full rounded-xl border border-cyan/50 bg-cyan/[0.08] py-3.5 text-sm font-bold uppercase tracking-wider text-cyan transition active:scale-[0.98]"
+        disabled={doneSets === 0}
+        className="tap mt-2 w-full rounded-xl border border-cyan/50 bg-cyan/[0.08] py-3.5 text-sm font-bold uppercase tracking-wider text-cyan transition active:scale-[0.98] disabled:opacity-40"
       >
         {t("finishSession")}
       </button>

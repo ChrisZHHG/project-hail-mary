@@ -53,7 +53,7 @@ const CATALOG = {
     targetMuscle: "Back",
     category: "compound",
     isWeighted: true,
-    media: img("pulldown"),
+    // media dropped: dual-frame diagram hard to read at icon size
   },
   row: {
     name: "DB Chest-Supported Upper Back Row",
@@ -62,7 +62,7 @@ const CATALOG = {
     targetMuscle: "Back",
     category: "compound",
     isWeighted: true,
-    media: img("row"),
+    // media dropped: dual-frame anatomical composite
   },
   press: {
     name: "Machine Chest Press OR BB/DB Bench Press",
@@ -89,7 +89,7 @@ const CATALOG = {
     targetMuscle: "Quads",
     category: "compound",
     isWeighted: true,
-    media: img("squat"),
+    // media dropped: glitchy dual-pose / animated-style composite
   },
   legCurl: {
     name: "Leg Curl",
@@ -140,7 +140,7 @@ const CATALOG = {
     targetMuscle: "Triceps",
     category: "isolation",
     isWeighted: true,
-    media: img("tri-ext"),
+    // media dropped: unrelated gym photo of a spotted lift, not a tricep extension
   },
   cableTri: {
     name: "Cable Straight-Bar OR Rope Tricep Extension",
@@ -149,7 +149,7 @@ const CATALOG = {
     targetMuscle: "Triceps",
     category: "isolation",
     isWeighted: true,
-    media: img("cable-tri"),
+    // media dropped: dual-pose A/B diagram with arrow
   },
   latRaise: {
     name: "Cable Lateral Raise",
@@ -158,7 +158,7 @@ const CATALOG = {
     targetMuscle: "Shoulders",
     category: "isolation",
     isWeighted: true,
-    media: img("lat-raise"),
+    // media dropped: standing DB hold, not a lateral raise
   },
   saLatRaise: {
     name: "Single-Arm Cable Lateral Raise",
@@ -167,7 +167,7 @@ const CATALOG = {
     targetMuscle: "Shoulders",
     category: "isolation",
     isWeighted: true,
-    media: img("sa-lat-raise"),
+    // media dropped: outdoor band photo, not cable
   },
   cableCrunch: {
     name: "Cable Crunch",
@@ -187,7 +187,7 @@ const CATALOG = {
     isWeighted: false,
     link: "https://youtube.com/shorts/WF4uuJw9uSo",
     biomechanicNotes: "4-second burst as hard as you can, 4-second rest. Repeat 4x.",
-    media: img("adductor"),
+    // media dropped: foam-roll photo ≠ yoga-ball isometric
   },
   // --- Chris's freestyle back-day machines (reconstructed watch sessions;
   // --- not in Austin's program, but part of the real training history) ---
@@ -199,7 +199,7 @@ const CATALOG = {
     category: "compound",
     isWeighted: true,
     biomechanicNotes: "Right arm runs ~2 reps ahead of the left — log each arm as its own set.",
-    media: img("sa-row"),
+    // media dropped: dim gym photo, poor legibility after invert filter
   },
   seatedRow: {
     name: "Seated Cable Row",

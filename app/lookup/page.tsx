@@ -8,7 +8,7 @@ import { fmtDayLong } from "@/lib/dates";
 import { BRAND } from "@/lib/brand";
 import { exerciseNames, useNameLang, useUnit, useWeightFmt, lbsToDisplay, displayToLbs } from "@/lib/prefs";
 import UnitToggle from "@/components/UnitToggle";
-import { useT, useMuscleName } from "@/lib/i18n";
+import { useT, useMuscleName, useVariantLabel } from "@/lib/i18n";
 import LangToggle from "@/components/LangToggle";
 import ExerciseMedia from "@/components/ExerciseMedia";
 import MiniTrend from "@/components/MiniTrend";
@@ -111,6 +111,7 @@ function EditableEntry({
   const t = useT();
   const unit = useUnit();
   const fw = useWeightFmt();
+  const variantLabel = useVariantLabel();
   const [editing, setEditing] = useState(false);
   const [w, setW] = useState<string>(
     entry.weight != null ? String(lbsToDisplay(entry.weight, unit)) : ""
@@ -144,7 +145,7 @@ function EditableEntry({
           {entry.weight != null ? fw(entry.weight) : t("bw")}
           {entry.reps != null ? ` × ${entry.reps}` : ""}
           {entry.rir != null ? ` @${entry.rir}` : ""}
-          {entry.variant ? ` · ${entry.variant}` : ""}
+          {entry.variant ? ` · ${variantLabel(entry.variant)}` : ""}
         </span>
         <button
           type="button"
@@ -165,9 +166,9 @@ function EditableEntry({
       <div className="flex items-center gap-1.5">
         <input inputMode="decimal" value={w} onChange={(e) => setW(e.target.value)} className={numInput} placeholder={unit} aria-label="weight" />
         <span className="text-faint">×</span>
-        <input inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} className={numInput} placeholder="reps" aria-label="reps" />
+        <input inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} className={numInput} placeholder={t("reps")} aria-label="reps" />
         <span className="text-faint">@</span>
-        <input inputMode="numeric" value={rir} onChange={(e) => setRir(e.target.value)} className={numInput} placeholder="RIR" aria-label="rir" />
+        <input inputMode="numeric" value={rir} onChange={(e) => setRir(e.target.value)} className={numInput} placeholder={t("rir")} aria-label="rir" />
       </div>
       <input
         value={variant}
@@ -218,7 +219,7 @@ function MemoryCard({ m }: { m: ExerciseMemory }) {
                 {last.reps != null ? <span className="text-ink"> × {last.reps}</span> : null}
               </p>
               <p className="tnum text-[0.65rem] text-faint">
-                {last.rir != null ? `@${last.rir} RIR · ` : ""}
+                {last.rir != null ? `@${last.rir} ${t("rir")} · ` : ""}
                 {last.date ? fmtDayLong(last.date, lang) : ""}
               </p>
             </div>

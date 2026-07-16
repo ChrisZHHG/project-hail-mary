@@ -9,11 +9,11 @@ import { useEffect } from "react";
 export default function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    // Dev server + HMR — registering a prod SW here blocks normal refresh.
+    if (process.env.NODE_ENV === "development") return;
 
     let reloaded = false;
     const onControllerChange = () => {
-      // New service worker took over (ours calls skipWaiting) → load the new
-      // shell exactly once. Guard prevents any reload loop.
       if (reloaded) return;
       reloaded = true;
       window.location.reload();
@@ -23,7 +23,7 @@ export default function ServiceWorkerRegister() {
     let reg: ServiceWorkerRegistration | undefined;
     const register = () => {
       navigator.serviceWorker
-        .register("/sw.js")
+        .register("/sw.js", { updateViaCache: "none" })
         .then((r) => {
           reg = r;
           r.update().catch(() => {});
@@ -33,8 +33,6 @@ export default function ServiceWorkerRegister() {
         });
     };
 
-    // Re-check for a new version whenever the app comes back to the foreground
-    // (the moment an iOS PWA is reopened from the app switcher).
     const onVisible = () => {
       if (document.visibilityState === "visible") reg?.update().catch(() => {});
     };

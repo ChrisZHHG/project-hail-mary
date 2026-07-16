@@ -6,6 +6,7 @@ import { db } from "@/lib/data/db";
 import { parseWatchRows, toSession, watchSessionId } from "@/lib/data/watchCsv";
 import { fmtDayLong } from "@/lib/dates";
 import { downloadBackup, restoreBackup } from "@/lib/backup";
+import { hardRefreshApp } from "@/lib/pwa";
 import { useNameLang, useUnit, useBodyweightLbs, setBodyweightLbs, lbsToDisplay, displayToLbs } from "@/lib/prefs";
 import { useT } from "@/lib/i18n";
 
@@ -140,10 +141,17 @@ function ProfileSection() {
 function BackupSection() {
   const t = useT();
   const [status, setStatus] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   async function onExport() {
     await downloadBackup();
     setStatus(t("backupDownloaded"));
+  }
+
+  async function onRefresh() {
+    setRefreshing(true);
+    setStatus(t("refreshing"));
+    await hardRefreshApp();
   }
 
   async function onRestore(file: File) {
@@ -182,6 +190,15 @@ function BackupSection() {
           />
         </label>
       </div>
+      <button
+        type="button"
+        onClick={() => void onRefresh()}
+        disabled={refreshing}
+        className="tap mt-2 w-full rounded-xl border border-line py-2.5 text-[0.75rem] font-semibold uppercase tracking-wider text-muted transition hover:border-cyan/40 hover:text-cyan disabled:opacity-50"
+      >
+        {t("refreshApp")}
+      </button>
+      <p className="mt-1 text-[0.65rem] leading-snug text-faint">{t("refreshAppHint")}</p>
       {status ? <p className="tnum mt-2 text-[0.75rem] text-cyan">{status}</p> : null}
     </section>
   );

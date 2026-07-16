@@ -21,6 +21,8 @@ import {
   WATCH_SESSION_LOGS,
   JULY15_SESSION,
   JULY15_LOGS,
+  JULY14_TOEPRESS_SESSION,
+  JULY14_TOEPRESS_LOGS,
 } from "./watchHistory";
 
 /** IndexedDB store (local-first). The Repository layer is what the app talks to;
@@ -139,6 +141,16 @@ export class HailMaryDB extends Dexie {
         await tx.table("exercises").bulkPut(SEED_EXERCISES);
       });
 
+    /* v9 — July 14 Toe Press backfill + media denylist / catalog refresh
+     * after wger white-bg cleanup (drop mismatched media → pictogram). */
+    this.version(9)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table("exercises").bulkPut(SEED_EXERCISES);
+        await tx.table("sessions").bulkPut([JULY14_TOEPRESS_SESSION]);
+        await tx.table("setLogs").bulkPut(JULY14_TOEPRESS_LOGS);
+      });
+
     this.on("populate", () => this.seed());
   }
 
@@ -149,8 +161,18 @@ export class HailMaryDB extends Dexie {
     await this.workouts.bulkAdd(SEED_WORKOUTS);
     await this.workoutExercises.bulkAdd(SEED_WORKOUT_EXERCISES);
     const demo = buildDemoHistory(now);
-    await this.sessions.bulkAdd([demo.session, ...WATCH_SESSIONS, JULY15_SESSION]);
-    await this.setLogs.bulkAdd([...demo.logs, ...WATCH_SESSION_LOGS, ...JULY15_LOGS]);
+    await this.sessions.bulkAdd([
+      demo.session,
+      ...WATCH_SESSIONS,
+      JULY14_TOEPRESS_SESSION,
+      JULY15_SESSION,
+    ]);
+    await this.setLogs.bulkAdd([
+      ...demo.logs,
+      ...WATCH_SESSION_LOGS,
+      ...JULY14_TOEPRESS_LOGS,
+      ...JULY15_LOGS,
+    ]);
   }
 }
 

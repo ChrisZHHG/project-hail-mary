@@ -3,7 +3,7 @@
    asset names. Data lives in IndexedDB, so the app is fully usable offline
    once the shell + chunks have been visited once. */
 
-const VERSION = "phm-v14";
+const VERSION = "phm-v15";
 const RUNTIME = `phm-runtime-${VERSION}`;
 
 self.addEventListener("install", () => {
@@ -27,14 +27,19 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // App navigations: network-first, fall back to cache, then the app shell.
+  // Never cache the service worker script itself.
+  if (url.pathname === "/sw.js") return;
+
+  // App navigations: network-first so UI updates land when online.
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
         try {
-          const fresh = await fetch(request);
-          const cache = await caches.open(RUNTIME);
-          cache.put(request, fresh.clone());
+          const fresh = await fetch(request, { cache: "no-store" });
+          if (fresh.ok) {
+            const cache = await caches.open(RUNTIME);
+            cache.put(request, fresh.clone());
+          }
           return fresh;
         } catch {
           const cached = await caches.match(request);
@@ -45,7 +50,26 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Everything else (JS/CSS/fonts/images): stale-while-revalidate.
+  // Hashed Next bundles: network-first when online (avoid stale UI after deploy).
+  if (url.pathname.startsWith("/_next/")) {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(request);
+          if (fresh.ok) {
+            const cache = await caches.open(RUNTIME);
+            cache.put(request, fresh.clone());
+          }
+          return fresh;
+        } catch {
+          return (await caches.match(request)) || Response.error();
+        }
+      })()
+    );
+    return;
+  }
+
+  // Everything else (icons/images/fonts): stale-while-revalidate.
   event.respondWith(
     (async () => {
       const cache = await caches.open(RUNTIME);
