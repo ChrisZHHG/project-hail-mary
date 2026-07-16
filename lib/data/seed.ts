@@ -53,7 +53,7 @@ const CATALOG = {
     targetMuscle: "Back",
     category: "compound",
     isWeighted: true,
-    // media dropped: dual-frame diagram hard to read at icon size
+    // media dropped: wger match is a colored anatomical diagram
   },
   row: {
     name: "DB Chest-Supported Upper Back Row",
@@ -62,7 +62,7 @@ const CATALOG = {
     targetMuscle: "Back",
     category: "compound",
     isWeighted: true,
-    // media dropped: dual-frame anatomical composite
+    media: img("row"),
   },
   press: {
     name: "Machine Chest Press OR BB/DB Bench Press",
@@ -89,7 +89,7 @@ const CATALOG = {
     targetMuscle: "Quads",
     category: "compound",
     isWeighted: true,
-    // media dropped: glitchy dual-pose / animated-style composite
+    media: img("squat"),
   },
   legCurl: {
     name: "Leg Curl",
@@ -99,7 +99,7 @@ const CATALOG = {
     category: "isolation",
     isWeighted: true,
     link: "https://youtube.com/shorts/Ymd77MLt_Oc",
-    media: img("leg-curl"),
+    // media dropped: wger match is a colored anatomical diagram
   },
   legExt: {
     name: "Leg Extension",
@@ -120,7 +120,7 @@ const CATALOG = {
     isWeighted: true,
     biomechanicNotes:
       "Hold the stretch at the bottom of each rep for 3-5 seconds. Then come only to neutral — not up onto your toes.",
-    media: img("toe-press"),
+    // media dropped: wger calf-press art is a full-color anatomical illustration
   },
   calfRaise: {
     name: "Straight-Legged Calf Raise",
@@ -158,7 +158,7 @@ const CATALOG = {
     targetMuscle: "Shoulders",
     category: "isolation",
     isWeighted: true,
-    // media dropped: standing DB hold, not a lateral raise
+    media: img("lat-raise"),
   },
   saLatRaise: {
     name: "Single-Arm Cable Lateral Raise",
