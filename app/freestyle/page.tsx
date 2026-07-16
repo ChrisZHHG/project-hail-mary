@@ -14,6 +14,7 @@ import ExerciseIcon from "@/components/ExerciseIcon";
 import WeightControl from "@/components/WeightControl";
 import Stepper from "@/components/Stepper";
 import RirSelector from "@/components/RirSelector";
+import GearChips from "@/components/GearChips";
 import LangToggle from "@/components/LangToggle";
 import { exerciseNames, useNameLang, useUnit, useWeightFmt, useVolumeFmt, lbsToDisplay, useBodyweightLbs } from "@/lib/prefs";
 import UnitToggle from "@/components/UnitToggle";
@@ -305,6 +306,8 @@ function FreestyleCard({
       ) : (
         <p className="mt-2 text-[0.75rem] text-faint">{t("firstRecord")}</p>
       )}
+
+      <GearChips exerciseId={exercise.id} pattern={exercise.pattern} />
 
       {/* logged sets with progress deltas */}
       {logs.filter((l) => l.done).map((l) => {

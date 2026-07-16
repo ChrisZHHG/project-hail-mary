@@ -98,6 +98,11 @@ const DICT = {
   bodyweightHint: ["用于自重动作(引体等)的容量计算。", "Used to count volume for bodyweight movements (pull-ups etc.)."],
   repsShort: ["次", "reps"],
 
+  // gear (per-exercise machine-setup memory)
+  gearTitle: ["器械刻度", "Machine setup"],
+  gearHint: ["记一次座位/绳位/握距，永远记得", "save seat / pulley / grip once — remembered forever"],
+  gearCustomKey: ["自定义", "custom"],
+
   // lookup
   memory: ["记忆", "Memory"],
   lastTimeOn: ["上次这台机器…", "Last time on…"],

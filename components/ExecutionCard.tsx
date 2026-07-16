@@ -14,6 +14,7 @@ import Stepper from "./Stepper";
 import WeightControl from "./WeightControl";
 import RirSelector from "./RirSelector";
 import Cue from "./Cue";
+import GearChips from "./GearChips";
 
 type Draft = { weight?: number; reps?: number; rir?: number };
 
@@ -161,6 +162,7 @@ export default function ExecutionCard({
       ) : null}
 
       <Cue note={exercise.biomechanicNotes} link={exercise.link} />
+      <GearChips exerciseId={exercise.id} pattern={exercise.pattern} />
 
       <div className="mt-3 flex flex-col gap-2">
         {Array.from({ length: rowCount }, (_, i) => i + 1).map((n) => {

@@ -124,3 +124,10 @@ export interface ReadinessCheck {
 export interface ExerciseInstance extends WorkoutExercise {
   exercise: Exercise;
 }
+
+export interface ExerciseGear {
+  exerciseId: string;
+  /** Free-form setup values keyed by canonical english key, e.g. { seat: "4", pulley: "3", grip: "wide" }. */
+  values: Record<string, string>;
+  updatedAt: number;
+}

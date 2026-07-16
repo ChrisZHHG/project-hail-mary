@@ -1,6 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type {
   Exercise,
+  ExerciseGear,
   Program,
   ReadinessCheck,
   Session,
@@ -32,6 +33,7 @@ export class HailMaryDB extends Dexie {
   sessions!: Table<Session, string>;
   setLogs!: Table<SetLog, string>;
   readinessChecks!: Table<ReadinessCheck, string>;
+  exerciseGear!: Table<ExerciseGear, string>;
 
   constructor() {
     super("hailmary");
@@ -123,6 +125,9 @@ export class HailMaryDB extends Dexie {
         await tx.table("sessions").bulkPut([JULY15_SESSION]);
         await tx.table("setLogs").bulkPut(JULY15_LOGS);
       });
+
+    /* v7 — per-exercise machine-setup memory (seat/pulley/grip …). */
+    this.version(7).stores({ exerciseGear: "exerciseId" });
 
     this.on("populate", () => this.seed());
   }
