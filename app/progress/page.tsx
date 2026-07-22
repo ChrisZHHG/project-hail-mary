@@ -97,7 +97,8 @@ export default function ProgressPage() {
     );
   }
 
-  const recent = [...sessions].reverse().slice(0, 10);
+  // Show the full history (newest first) — a hard cap read as "my data vanished".
+  const recent = [...sessions].reverse();
 
   return (
     <div className="flex flex-col gap-5">
