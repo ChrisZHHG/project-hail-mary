@@ -12,7 +12,6 @@
   --color-panel: #0d0f16;
   --color-elevated: #141823;
   --color-line: #232838;
-  --color-line-soft: #181c28;
 
   /* text */
   --color-ink: #e9ecf6;
@@ -113,9 +112,6 @@ body {
 /* glow helpers */
 .glow-laser {
   box-shadow: 0 0 0 1px rgba(255, 94, 26, 0.35), 0 0 28px -6px rgba(255, 94, 26, 0.55);
-}
-.glow-cyan {
-  box-shadow: 0 0 0 1px rgba(44, 230, 255, 0.3), 0 0 26px -8px rgba(44, 230, 255, 0.5);
 }
 .text-glow-laser {
   text-shadow: 0 0 18px rgba(255, 94, 26, 0.45);

@@ -26,6 +26,7 @@ const img = (slug: string): Exercise["media"] => ({
 
 export const LIBRARY: LibraryEntry[] = [
   // --- Chest ---
+  { slug: "bench-press", name: "Bench Press", aliasZh: "杠铃卧推", targetMuscle: "Chest", pattern: "press", isWeighted: true },
   { slug: "incline-db-press", name: "Incline DB Press", aliasZh: "上斜哑铃卧推", targetMuscle: "Chest", pattern: "press", isWeighted: true, media: img("incline-db-press") },
   { slug: "cable-fly", name: "Cable Fly", aliasZh: "绳索夹胸", targetMuscle: "Chest", pattern: "press", isWeighted: true, media: img("cable-fly") },
   { slug: "push-up", name: "Push-Up", aliasZh: "俯卧撑", targetMuscle: "Chest", pattern: "press", isWeighted: false }, // media dropped: stylized sci-fi illustration, not a line-art reference
@@ -33,6 +34,7 @@ export const LIBRARY: LibraryEntry[] = [
   { slug: "chest-dips", name: "Chest Dips", aliasZh: "双杠臂屈伸(胸)", targetMuscle: "Chest", pattern: "press", isWeighted: false },
 
   // --- Back ---
+  { slug: "lat-pulldown", name: "Lat Pulldown", aliasZh: "高位下拉", targetMuscle: "Back", pattern: "pulldown", isWeighted: true },
   { slug: "barbell-row", name: "Barbell Row", aliasZh: "杠铃划船", targetMuscle: "Back", pattern: "row", isWeighted: true }, // media dropped: image shows a dumbbell row, not barbell
   { slug: "t-bar-row", name: "T-Bar Row", aliasZh: "T杠划船", targetMuscle: "Back", pattern: "row", isWeighted: true, media: img("t-bar-row") },
   { slug: "face-pull", name: "Face Pull", aliasZh: "面拉", targetMuscle: "Back", pattern: "row", isWeighted: true }, // media dropped: image is rear-delt row, not face pull

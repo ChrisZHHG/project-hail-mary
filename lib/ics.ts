@@ -14,13 +14,14 @@ const SCHEDULE: Record<string, number> = {
 
 const DEFAULT_HOUR = 17; // 5 PM start; easy to edit in the calendar
 
-/** Next occurrence of the workout's weekday (today counts if before 6 PM). */
+/** Next occurrence of the workout's weekday (today only counts if we're still
+ *  before the default start time — otherwise the reminder would land in the past). */
 export function nextOccurrence(workoutId: string, from = new Date()): Date | null {
   const dow = SCHEDULE[workoutId];
   if (dow == null) return null;
   const d = new Date(from);
   let delta = (dow - d.getDay() + 7) % 7;
-  if (delta === 0 && d.getHours() >= 18) delta = 7;
+  if (delta === 0 && d.getHours() >= DEFAULT_HOUR) delta = 7;
   d.setDate(d.getDate() + delta);
   d.setHours(DEFAULT_HOUR, 0, 0, 0);
   return d;

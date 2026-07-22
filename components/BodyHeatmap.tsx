@@ -8,44 +8,34 @@ import {
   type MuscleRegion,
 } from "@/lib/musclePaths";
 
-/** Front + back anatomical figures with muscle regions heated by relative
- *  tonnage. Cold = dim slate, warming through neon-cyan to laser-orange.
- *  Geometry lives in lib/musclePaths.ts (right-half paths, mirrored here).
- *  Pass `onPick` to use the figure as a tappable muscle picker (freestyle
- *  logging); `selected` rings the active muscle. */
-export default function BodyHeatmap({
-  data,
-  onPick,
+const LIMB = "var(--color-elevated)";
+const OUTLINE = "var(--color-line)";
+
+/** One anatomical figure (front or back). Hoisted out of the parent's render so
+ *  React keeps a stable component identity; `heat` is passed in as a prop. */
+function Figure({
+  cx,
+  regions,
+  label,
+  heat,
   selected,
+  onPick,
 }: {
-  data: { muscle: string; volume: number }[];
-  onPick?: (muscle: string) => void;
+  cx: number;
+  regions: MuscleRegion[];
+  label: string;
+  heat: (muscle: string) => string;
   selected?: string | null;
+  onPick?: (muscle: string) => void;
 }) {
-  const vol = new Map(data.map((d) => [d.muscle, d.volume]));
-  const max = Math.max(1, ...data.map((d) => d.volume));
-  const heat = (muscle: string) => {
-    const t = (vol.get(muscle) ?? 0) / max;
-    if (t <= 0) return "rgba(70,80,102,0.25)";
-    const lo = [44, 230, 255];
-    const hi = [255, 94, 26];
-    const r = Math.round(lo[0] + (hi[0] - lo[0]) * t);
-    const g = Math.round(lo[1] + (hi[1] - lo[1]) * t);
-    const b = Math.round(lo[2] + (hi[2] - lo[2]) * t);
-    return `rgba(${r},${g},${b},${(0.45 + 0.55 * t).toFixed(2)})`;
-  };
-
-  const limb = "var(--color-elevated)";
-  const outline = "var(--color-line)";
-
-  const Figure = ({ cx, regions, label }: { cx: number; regions: MuscleRegion[]; label: string }) => (
+  return (
     <g transform={`translate(${cx},4)`}>
       {/* silhouette (right half + mirror) */}
-      <ellipse cx="0" cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={limb} stroke={outline} strokeWidth="0.75" />
+      <ellipse cx="0" cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={LIMB} stroke={OUTLINE} strokeWidth="0.75" />
       {[1, -1].map((sx) => (
         <g key={sx} transform={`scale(${sx},1)`}>
           {SILHOUETTE_HALF.map((d, i) => (
-            <path key={i} d={d} fill={limb} stroke={outline} strokeWidth="0.75" />
+            <path key={i} d={d} fill={LIMB} stroke={OUTLINE} strokeWidth="0.75" />
           ))}
         </g>
       ))}
@@ -86,11 +76,39 @@ export default function BodyHeatmap({
       </text>
     </g>
   );
+}
+
+/** Front + back anatomical figures with muscle regions heated by relative
+ *  tonnage. Cold = dim slate, warming through neon-cyan to laser-orange.
+ *  Geometry lives in lib/musclePaths.ts (right-half paths, mirrored here).
+ *  Pass `onPick` to use the figure as a tappable muscle picker (freestyle
+ *  logging); `selected` rings the active muscle. */
+export default function BodyHeatmap({
+  data,
+  onPick,
+  selected,
+}: {
+  data: { muscle: string; volume: number }[];
+  onPick?: (muscle: string) => void;
+  selected?: string | null;
+}) {
+  const vol = new Map(data.map((d) => [d.muscle, d.volume]));
+  const max = Math.max(1, ...data.map((d) => d.volume));
+  const heat = (muscle: string) => {
+    const t = (vol.get(muscle) ?? 0) / max;
+    if (t <= 0) return "rgba(70,80,102,0.25)";
+    const lo = [44, 230, 255];
+    const hi = [255, 94, 26];
+    const r = Math.round(lo[0] + (hi[0] - lo[0]) * t);
+    const g = Math.round(lo[1] + (hi[1] - lo[1]) * t);
+    const b = Math.round(lo[2] + (hi[2] - lo[2]) * t);
+    return `rgba(${r},${g},${b},${(0.45 + 0.55 * t).toFixed(2)})`;
+  };
 
   return (
     <svg viewBox="0 0 320 260" className="w-full" role="img" aria-label="Muscle load by body region">
-      <Figure cx={80} regions={FRONT_MUSCLES} label="FRONT" />
-      <Figure cx={240} regions={BACK_MUSCLES} label="BACK" />
+      <Figure cx={80} regions={FRONT_MUSCLES} label="FRONT" heat={heat} selected={selected} onPick={onPick} />
+      <Figure cx={240} regions={BACK_MUSCLES} label="BACK" heat={heat} selected={selected} onPick={onPick} />
       {/* heat legend */}
       <defs>
         <linearGradient id="bh-legend" x1="0" y1="1" x2="0" y2="0">

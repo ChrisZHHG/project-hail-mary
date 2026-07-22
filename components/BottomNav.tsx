@@ -44,7 +44,7 @@ const TABS: Tab[] = [
   {
     href: "/progress",
     label: "navProgress",
-    match: (p) => p === "/progress",
+    match: (p) => p === "/progress" || p === "/history",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
         <path d="M4 19V5M4 19h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

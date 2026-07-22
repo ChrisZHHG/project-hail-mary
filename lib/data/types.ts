@@ -72,7 +72,8 @@ export interface Session {
   durationSec?: number;
   kcal?: number;
   avgHr?: number;
-  /** Total volume as reported by the watch/app that recorded it (kg). */
+  /** Manually-entered session total, in **lbs**. Legacy field name: the watch
+   *  never measured lifting volume, so this is an estimate, not kilograms. */
   importedVolumeKg?: number;
   /** Original clock time as recorded, e.g. "8:29 AM". */
   clockTime?: string;

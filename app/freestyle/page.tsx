@@ -6,7 +6,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
 import { repo } from "@/lib/data/repository";
 import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
-import { sumVolume, fmtVolume } from "@/lib/volume";
+import { sumVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
 import type { Exercise, SetLog } from "@/lib/data/types";
 import { LIBRARY } from "@/lib/library";
@@ -30,12 +30,14 @@ export default function FreestylePage() {
   const [ready, setReady] = useState(false);
   const [muscle, setMuscle] = useState<string | null>(null);
   const [active, setActive] = useState<string[]>([]); // exerciseIds being logged
+  const [showCustom, setShowCustom] = useState(false);
+  const [customName, setCustomName] = useState("");
+  const [customWeighted, setCustomWeighted] = useState(true);
   const lang = useNameLang();
   const t = useT();
   const muscleName = useMuscleName();
   const unit = useUnit();
   const fw = useWeightFmt();
-  const bodyweight = useBodyweightLbs();
   const fv = useVolumeFmt();
 
   useEffect(() => {
@@ -95,9 +97,10 @@ export default function FreestylePage() {
   const pickable = exercises.filter(
     (e) => e.category !== "cardio" && e.category !== "mobility"
   );
-  // Full canonical body map — muscles without exercises still show (empty-state
-  // hint) so "I can't find X" never happens silently.
-  const CANONICAL = ["Back", "Chest", "Shoulders", "Biceps", "Triceps", "Forearms", "Core", "Quads", "Hamstrings", "Glutes", "Adductors", "Calves"];
+  // Full canonical body map — every region the figure draws is here so tapping
+  // it always responds; muscles without exercises fall through to the
+  // empty-state hint + "custom exercise" entry (no silent dead zones).
+  const CANONICAL = ["Back", "Chest", "Shoulders", "Biceps", "Triceps", "Forearms", "Core", "Lower back", "Quads", "Hamstrings", "Glutes", "Adductors", "Calves", "Shins"];
   const fromData = [...new Set(pickable.map((e) => e.targetMuscle))];
   const muscles = [...new Set([...CANONICAL, ...fromData])];
   const volume = sumVolume(sessionLogs);
@@ -118,6 +121,22 @@ export default function FreestylePage() {
     if (!sessionId || doneSets === 0) return;
     await repo.completeSession(sessionId);
     router.push("/progress");
+  }
+
+  // Add a machine that isn't in the catalog/library. Uses `put` (idempotent),
+  // tags it to the selected muscle, then opens its log card immediately.
+  async function addCustom() {
+    const name = customName.trim();
+    if (!name || !muscle) return;
+    const id = `ex-custom-${crypto.randomUUID()}`;
+    await db.exercises
+      .put({ id, name, targetMuscle: muscle, category: "isolation", isWeighted: customWeighted })
+      .catch(() => {});
+    setCustomName("");
+    setCustomWeighted(true);
+    setShowCustom(false);
+    setActive((a) => (a.includes(id) ? a : [...a, id]));
+    setMuscle(null);
   }
 
   return (
@@ -242,17 +261,21 @@ export default function FreestylePage() {
                 return (
                   <li key={e.slug}>
                     <button
-                      onClick={() => {
-                        void db.exercises.add({
-                          id: `ex-lib-${e.slug}`,
-                          name: e.name,
-                          aliasZh: e.aliasZh,
-                          pattern: e.pattern,
-                          targetMuscle: e.targetMuscle,
-                          category: "isolation",
-                          isWeighted: e.isWeighted,
-                          media: e.media,
-                        });
+                      onClick={async () => {
+                        // put (not add) is idempotent: a fast double-tap re-writes
+                        // the same row instead of throwing a ConstraintError.
+                        await db.exercises
+                          .put({
+                            id: `ex-lib-${e.slug}`,
+                            name: e.name,
+                            aliasZh: e.aliasZh,
+                            pattern: e.pattern,
+                            targetMuscle: e.targetMuscle,
+                            category: "isolation",
+                            isWeighted: e.isWeighted,
+                            media: e.media,
+                          })
+                          .catch(() => {});
                       }}
                       className="tap flex w-full items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-left text-muted transition hover:border-cyan/40"
                     >
@@ -269,6 +292,50 @@ export default function FreestylePage() {
               })}
             </ul>
           </div>
+        ) : null}
+
+        {/* Custom exercise — any machine not in the catalog/library. */}
+        {muscle ? (
+          showCustom ? (
+            <div className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
+              <input
+                type="text"
+                autoFocus
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addCustom()}
+                placeholder={t("customNamePlaceholder")}
+                className="w-full rounded-xl border border-line bg-abyss/60 px-3 py-2.5 text-[0.9rem] text-ink outline-none transition focus:border-cyan/50"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCustomWeighted((v) => !v)}
+                  className={`tap rounded-full border px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-wider transition ${
+                    customWeighted ? "border-cyan bg-cyan/15 text-cyan" : "border-line text-faint"
+                  }`}
+                >
+                  {t("customWeighted")}
+                </button>
+                <button
+                  type="button"
+                  onClick={addCustom}
+                  disabled={!customName.trim()}
+                  className="tap ml-auto rounded-xl border border-laser/50 bg-laser/[0.08] px-4 py-1.5 text-[0.75rem] font-bold uppercase tracking-wider text-laser transition active:scale-[0.98] disabled:opacity-40"
+                >
+                  {t("addExercise")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowCustom(true)}
+              className="tap mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line py-2.5 text-[0.8rem] font-semibold text-faint transition hover:border-cyan/40 hover:text-cyan"
+            >
+              {t("customExercise")}
+            </button>
+          )
         ) : null}
       </section>
 

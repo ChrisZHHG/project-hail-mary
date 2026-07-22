@@ -13,7 +13,7 @@ import { LEVEL_META, REC_ZH, REC_ZH_JOINT } from "@/lib/data/readiness";
 import { useT } from "@/lib/i18n";
 import { useNameLang, useUnit, useVolumeFmt } from "@/lib/prefs";
 import { PRINCIPLES } from "@/lib/theory";
-import { sessionTonnageLbs, fmtVolume } from "@/lib/volume";
+import { sessionTonnageLbs } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
 import { fmtDayLong } from "@/lib/dates";
 import { downloadWorkoutIcs, nextOccurrence } from "@/lib/ics";
@@ -30,6 +30,7 @@ export default function Home() {
   const allLogs = useAllSetLogs();
   // Compute after mount to avoid a build-time vs client hydration mismatch.
   const [weekend, setWeekend] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe: weekday is client-only, defaults false on the server
   useEffect(() => setWeekend(isWeekend()), []);
 
   const lastSession = completed?.[0];
@@ -53,8 +54,8 @@ export default function Home() {
   const [backupDue, setBackupDue] = useState<number | "never" | null>(null);
   useEffect(() => {
     const days = daysSinceBackup();
-    if (days == null) setBackupDue("never");
-    else if (days > 14) setBackupDue(days);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only localStorage read after mount
+    setBackupDue(days == null ? "never" : days > 14 ? days : null);
   }, []);
 
   // Computed after mount (weekday math) to avoid hydration drift.
@@ -66,6 +67,7 @@ export default function Home() {
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
       d.getDate()
     ).padStart(2, "0")}`;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- weekday math is client-only, avoids hydration drift
     setNextDayLabel(fmtDayLong(iso, lang));
   }, [nextWorkout, lang]);
 

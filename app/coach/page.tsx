@@ -6,10 +6,10 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
 import { weekStart } from "@/lib/data/repository";
 import { LEVEL_META } from "@/lib/data/readiness";
-import { summarizeLoad, ZONE_META } from "@/lib/load";
+import { summarizeLoad } from "@/lib/load";
 import { buildExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
-import { BRAND } from "@/lib/brand";
+import { useWeightFmt } from "@/lib/prefs";
 import LoadGauge from "@/components/LoadGauge";
 import { useT } from "@/lib/i18n";
 
@@ -17,6 +17,7 @@ import { useT } from "@/lib/i18n";
  *  a client list can wrap it once accounts/sync exist. */
 export default function CoachPage() {
   const t = useT();
+  const fw = useWeightFmt();
   const sessions = useLiveQuery(() => db.sessions.toArray(), []);
   const logs = useLiveQuery(() => db.setLogs.toArray(), []);
   const exercises = useLiveQuery(() => db.exercises.toArray(), []);
@@ -172,7 +173,7 @@ export default function CoachPage() {
                           </span>
                           {last ? (
                             <span className="ml-2 text-cyan">
-                              {last.weight != null ? `${last.weight}${BRAND.unit}` : "BW"}
+                              {last.weight != null ? fw(last.weight) : "BW"}
                               {last.reps != null ? `×${last.reps}` : ""}
                             </span>
                           ) : (

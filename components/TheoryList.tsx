@@ -25,10 +25,12 @@ function linkedExercises(t: TheoryItem): string[] {
 export default function TheoryList() {
   const [highlight, setHighlight] = useState<string | null>(null);
 
-  // Deep links from training cards: /method#th-… → scroll + glow.
+  // Deep links from training cards: /method#th-… → scroll + glow. Reading the
+  // URL hash is client-only, so this genuinely belongs in a mount effect.
   useEffect(() => {
     const id = window.location.hash.slice(1);
     if (!id) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot post-mount highlight from the URL hash
     setHighlight(id);
     document.getElementById(id)?.scrollIntoView({ block: "center" });
     const t = setTimeout(() => setHighlight(null), 2400);

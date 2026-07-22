@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { Exercise } from "./data/types";
-import { fmtVolume } from "./volume";
+import { fmtVolume, LBS_PER_KG } from "./volume";
 
 /** Tiny persisted preference stores (language, weight unit). Module-level so
  *  every component on the page swaps together; localStorage so choices stick. */
@@ -59,8 +59,6 @@ export const setUnit = unitPref.set;
 export function useUnit(): WeightUnit {
   return useSyncExternalStore(unitPref.sub, unitPref.get, () => "lbs" as const);
 }
-
-export const LBS_PER_KG = 2.2046226218;
 
 /** Canonical storage is ALWAYS lbs; these convert at the display/input edge. */
 export const lbsToDisplay = (lbs: number, u: WeightUnit) =>

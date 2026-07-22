@@ -5,7 +5,6 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
 import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
-import { BRAND } from "@/lib/brand";
 import { exerciseNames, useNameLang, useUnit, useWeightFmt, lbsToDisplay, displayToLbs } from "@/lib/prefs";
 import UnitToggle from "@/components/UnitToggle";
 import { useT, useMuscleName, useVariantLabel } from "@/lib/i18n";

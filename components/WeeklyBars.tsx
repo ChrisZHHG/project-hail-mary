@@ -20,7 +20,6 @@ export default function WeeklyBars({
   const fv = useVolumeFmt();
 
   // last 8 Monday-anchored weeks, oldest → newest
-  const DAY = 24 * 60 * 60 * 1000;
   const thisMonday = weekStart();
   const weeks: { start: string; total: number }[] = [];
   for (let i = 7; i >= 0; i--) {

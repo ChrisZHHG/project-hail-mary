@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/data/db";
-import { setVolume, sessionTonnageLbs, fmtVolume } from "@/lib/volume";
-import { BRAND } from "@/lib/brand";
+import { setVolume, sessionTonnageLbs } from "@/lib/volume";
 import VolumeTrend, { type TrendPoint } from "@/components/VolumeTrend";
 import MuscleLoad from "@/components/MuscleLoad";
 import BodyHeatmap from "@/components/BodyHeatmap";
@@ -142,7 +141,11 @@ export default function ProgressPage() {
               (s.workoutId && woById.get(s.workoutId)?.name) ||
               (s.kind === "cardio" ? t("cardioLabel") : t("strengthLabel"));
             return (
-              <li key={s.id} className="flex items-baseline justify-between gap-2 py-2 text-sm">
+              <li key={s.id}>
+                <Link
+                  href={`/history?s=${s.id}`}
+                  className="flex items-baseline justify-between gap-2 py-2 text-sm transition active:opacity-70"
+                >
                 <div className="min-w-0">
                   <span className="text-ink">{name}</span>
                   {s.source === "watch" ? (
@@ -165,6 +168,7 @@ export default function ProgressPage() {
                   {s.kcal ? <p className="text-faint">{s.kcal} kcal</p> : null}
                   {s.avgHr ? <p className="text-faint">{s.avgHr} bpm</p> : null}
                 </div>
+                </Link>
               </li>
             );
           })}

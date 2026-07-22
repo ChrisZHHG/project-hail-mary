@@ -13,6 +13,7 @@ const TABLES = [
   "sessions",
   "setLogs",
   "readinessChecks",
+  "exerciseGear",
 ] as const;
 
 const LS_KEY = "phm-last-backup";
