@@ -204,7 +204,12 @@ function AddSet({
     lib: l,
   }));
   const cands = [...exCands, ...libCands]
-    .filter((c) => !q || c.name.toLowerCase().includes(q) || (c.aliasZh ?? "").toLowerCase().includes(q))
+    .filter((c) => {
+      if (!q) return true;
+      if (c.name.toLowerCase().includes(q)) return true;
+      if ((c.aliasZh ?? "").toLowerCase().includes(q)) return true;
+      return !!c.lib?.aliases?.some((a) => a.toLowerCase().includes(q));
+    })
     .slice(0, 8);
 
   async function pick(c: Candidate) {
