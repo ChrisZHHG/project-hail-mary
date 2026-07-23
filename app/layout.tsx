@@ -4,6 +4,7 @@ import "./globals.css";
 import { BRAND } from "@/lib/brand";
 import BottomNav from "@/components/BottomNav";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import CloudSyncManager from "@/components/CloudSyncManager";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="min-h-full">
         <div className="starfield" aria-hidden />
         <ServiceWorkerRegister />
+        <CloudSyncManager />
         <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-[calc(4.25rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
           {children}
         </main>
