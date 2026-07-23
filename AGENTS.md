@@ -11,6 +11,9 @@ Offline-first strength-training logger **PWA**. Next.js 16 (App Router, static
 **Local-first: all data lives on-device — the phone IS the database.** Deployed on
 Vercel → https://projecthalimary.vercel.app
 
+> **Mission / the *why*:** see [`SOUL.md`](SOUL.md) — data-driven visible progress +
+> science-backed method (Austin's "frequency > load"), not ego lifting.
+
 (For the Next.js version caveat, see the block above — async `params`, the
 `metadata`/`viewport` split, and `manifest.ts` `force-static` are already used
 correctly; don't "fix" them.)
