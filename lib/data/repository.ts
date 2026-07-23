@@ -108,8 +108,8 @@ export interface Repository {
   schemaVersion(): number;
 }
 
-/** Every table in the schema — the unit of a full backup/restore. */
-const BACKUP_TABLES = [
+/** Every table in the schema — the unit of a full backup/restore and cloud sync. */
+export const ALL_TABLES = [
   "exercises",
   "programs",
   "workouts",
@@ -351,13 +351,13 @@ class DexieRepository implements Repository {
   /* ---- backup ---- */
   async exportAll() {
     const tables: Record<string, unknown[]> = {};
-    for (const t of BACKUP_TABLES) tables[t] = await db.table(t).toArray();
+    for (const t of ALL_TABLES) tables[t] = await db.table(t).toArray();
     return tables;
   }
 
   async importAll(tables: Record<string, unknown[]>) {
     const counts: Record<string, number> = {};
-    for (const t of BACKUP_TABLES) {
+    for (const t of ALL_TABLES) {
       const rows = tables[t];
       if (Array.isArray(rows) && rows.length) {
         await db.table(t).bulkPut(rows);

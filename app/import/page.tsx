@@ -7,6 +7,9 @@ import { parseWatchRows, toSession, watchSessionId } from "@/lib/data/watchCsv";
 import { fmtDayLong } from "@/lib/dates";
 import { downloadBackup, restoreBackup } from "@/lib/backup";
 import { hardRefreshApp } from "@/lib/pwa";
+import { isCloudConfigured } from "@/lib/data/supabase";
+import { useSession, signInWithEmail, signOut } from "@/lib/data/auth";
+import { pushToCloud, pullFromCloud } from "@/lib/data/cloudSync";
 import { useNameLang, useUnit, useBodyweightLbs, setBodyweightLbs, lbsToDisplay, displayToLbs } from "@/lib/prefs";
 import { useT } from "@/lib/i18n";
 
@@ -99,8 +102,119 @@ export default function ImportPage() {
 
       <ProfileSection />
 
+      <CloudSyncSection />
+
       <BackupSection />
     </div>
+  );
+}
+
+/** Cloud sync (Phase 2) — magic-link sign-in + whole-DB push/pull. Hidden
+ *  entirely when no Supabase project is configured, so local-only mode is
+ *  visually unchanged. */
+function CloudSyncSection() {
+  const t = useT();
+  const session = useSession();
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  if (!isCloudConfigured) return null;
+
+  async function sendLink() {
+    setBusy(true);
+    setStatus(null);
+    const { error } = await signInWithEmail(email);
+    setBusy(false);
+    setStatus(error ? `${t("cloudError")}${error}` : t("cloudLinkSent"));
+  }
+
+  async function push(userId: string) {
+    setBusy(true);
+    setStatus(t("cloudSyncing"));
+    try {
+      const counts = await pushToCloud(userId);
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      setStatus(t("cloudPushed").replace("{n}", String(total)));
+    } catch (e) {
+      setStatus(`${t("cloudError")}${e instanceof Error ? e.message : ""}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function pull() {
+    setBusy(true);
+    setStatus(t("cloudSyncing"));
+    try {
+      const counts = await pullFromCloud();
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      setStatus(t("cloudPulled").replace("{n}", String(total)));
+    } catch (e) {
+      setStatus(`${t("cloudError")}${e instanceof Error ? e.message : ""}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="panel mt-2 p-4">
+      <h2 className="eyebrow mb-1">{t("cloudSection")}</h2>
+      <p className="mb-3 text-[0.75rem] leading-snug text-muted">{t("cloudBody")}</p>
+
+      {session ? (
+        <>
+          <p className="mb-2 text-[0.8rem] text-ink">
+            {t("cloudSignedInAs").replace("{email}", session.user.email ?? "")}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => void push(session.user.id)}
+              disabled={busy}
+              className="tap flex-1 rounded-xl border border-cyan/50 bg-cyan/[0.08] py-3 text-sm font-bold uppercase tracking-wider text-cyan transition active:scale-[0.98] disabled:opacity-50"
+            >
+              {t("cloudPush")}
+            </button>
+            <button
+              type="button"
+              onClick={() => void pull()}
+              disabled={busy}
+              className="tap flex-1 rounded-xl border border-line py-3 text-sm font-bold uppercase tracking-wider text-muted transition hover:border-cyan/40 disabled:opacity-50"
+            >
+              {t("cloudPull")}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="tap mt-2 w-full rounded-xl py-2 text-[0.7rem] font-semibold uppercase tracking-wider text-faint transition hover:text-danger"
+          >
+            {t("cloudSignOut")}
+          </button>
+        </>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <input
+            type="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t("cloudEmailPlaceholder")}
+            className="w-full rounded-xl border border-line bg-elevated px-3 py-2.5 text-base text-ink placeholder:text-faint focus:border-cyan focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => void sendLink()}
+            disabled={busy || !email.trim()}
+            className="tap w-full rounded-xl border border-cyan/50 bg-cyan/[0.08] py-3 text-sm font-bold uppercase tracking-wider text-cyan transition active:scale-[0.98] disabled:opacity-40"
+          >
+            {t("cloudSendLink")}
+          </button>
+        </div>
+      )}
+      {status ? <p className="tnum mt-2 text-[0.75rem] text-cyan">{status}</p> : null}
+    </section>
   );
 }
 

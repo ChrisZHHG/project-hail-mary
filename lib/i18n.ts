@@ -285,6 +285,24 @@ const DICT = {
   notFoundTitle: ["页面不存在", "Page not found"],
   notFoundBody: ["这里什么都没有 —— 链接可能已过期。", "There's nothing here — the link may be stale."],
   goHome: ["回到首页", "Back home"],
+
+  // cloud sync (Phase 2)
+  cloudSection: ["云同步", "Cloud sync"],
+  cloudBody: [
+    "登录后可把本设备的数据备份到云端,并在其它设备上恢复。数据仍先存在本机。",
+    "Sign in to back up this device's data to the cloud and restore it on another. Data still lives on-device first.",
+  ],
+  cloudEmailPlaceholder: ["邮箱", "you@email.com"],
+  cloudSendLink: ["发送登录链接", "Send sign-in link"],
+  cloudLinkSent: ["登录链接已发送 ✓ 打开邮件即可登录。", "Sign-in link sent ✓ open the email to finish."],
+  cloudSignedInAs: ["已登录:{email}", "Signed in as {email}"],
+  cloudPush: ["备份到云", "Push to cloud"],
+  cloudPull: ["从云端拉取", "Pull from cloud"],
+  cloudSignOut: ["登出", "Sign out"],
+  cloudPushed: ["已上传 {n} 行 ✓", "Pushed {n} rows ✓"],
+  cloudPulled: ["已拉取 {n} 行 ✓", "Pulled {n} rows ✓"],
+  cloudSyncing: ["同步中…", "Syncing…"],
+  cloudError: ["同步失败:", "Sync failed: "],
 } as const;
 
 export type I18nKey = keyof typeof DICT;
