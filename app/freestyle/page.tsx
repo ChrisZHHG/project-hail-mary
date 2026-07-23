@@ -2,13 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
 import { repo } from "@/lib/data/repository";
+import {
+  useExercises,
+  useWorkoutExercises,
+  useAllSetLogs,
+  useAllSessions,
+  useSessionExerciseLogs,
+} from "@/lib/data/hooks";
 import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
 import { sumVolume } from "@/lib/volume";
 import { BRAND } from "@/lib/brand";
-import type { Exercise, SetLog } from "@/lib/data/types";
+import type { Exercise } from "@/lib/data/types";
 import { LIBRARY } from "@/lib/library";
 import BodyHeatmap from "@/components/BodyHeatmap";
 import ExerciseMedia from "@/components/ExerciseMedia";
@@ -44,16 +49,14 @@ export default function FreestylePage() {
     let alive = true;
     (async () => {
       await repo.cleanupStaleOpenSessions();
-      const existing = await db.sessions
-        .filter((s) => !s.workoutId && s.completedAt == null && s.source !== "watch")
-        .first();
+      const existing = await repo.getOpenFreestyleSession();
       if (!alive) return;
       if (existing) {
         const existingLogs = await repo.getSetLogs(existing.id);
         if (existingLogs.some((l) => l.done)) {
           setSessionId(existing.id);
         } else {
-          await db.sessions.delete(existing.id);
+          await repo.deleteSession(existing.id);
         }
       }
       if (alive) setReady(true);
@@ -70,10 +73,10 @@ export default function FreestylePage() {
     return s.id;
   };
 
-  const exercises = useLiveQuery(() => db.exercises.toArray(), []);
-  const wexs = useLiveQuery(() => db.workoutExercises.toArray(), []);
-  const logs = useLiveQuery(() => db.setLogs.toArray(), []);
-  const sessions = useLiveQuery(() => db.sessions.toArray(), []);
+  const exercises = useExercises();
+  const wexs = useWorkoutExercises();
+  const logs = useAllSetLogs();
+  const sessions = useAllSessions();
 
   const sessionLogs = useMemo(
     () => (logs ?? []).filter((l) => sessionId && l.sessionId === sessionId),
@@ -129,8 +132,8 @@ export default function FreestylePage() {
     const name = customName.trim();
     if (!name || !muscle) return;
     const id = `ex-custom-${crypto.randomUUID()}`;
-    await db.exercises
-      .put({ id, name, targetMuscle: muscle, category: "isolation", isWeighted: customWeighted })
+    await repo
+      .addExercise({ id, name, targetMuscle: muscle, category: "isolation", isWeighted: customWeighted })
       .catch(() => {});
     setCustomName("");
     setCustomWeighted(true);
@@ -264,8 +267,8 @@ export default function FreestylePage() {
                       onClick={async () => {
                         // put (not add) is idempotent: a fast double-tap re-writes
                         // the same row instead of throwing a ConstraintError.
-                        await db.exercises
-                          .put({
+                        await repo
+                          .addExercise({
                             id: `ex-lib-${e.slug}`,
                             name: e.name,
                             aliasZh: e.aliasZh,
@@ -375,18 +378,7 @@ function FreestyleCard({
   const names = exerciseNames(exercise, lang);
   const variantLabel = useVariantLabel();
 
-  const logs =
-    useLiveQuery(
-      () =>
-        sessionId
-          ? db.setLogs
-              .where("sessionId")
-              .equals(sessionId)
-              .and((l) => l.exerciseId === exercise.id)
-              .sortBy("setNumber")
-          : Promise.resolve([] as SetLog[]),
-      [sessionId, exercise.id]
-    ) ?? [];
+  const logs = useSessionExerciseLogs(sessionId, exercise.id) ?? [];
 
   const last = memory?.last; // best reference from history (pre-session)
   const sessionLast = logs.filter((l) => l.done).at(-1);

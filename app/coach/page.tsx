@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
 import { weekStart } from "@/lib/data/repository";
+import {
+  useAllSessions,
+  useAllSetLogs,
+  useExercises,
+  useWorkoutExercises,
+  useWorkouts,
+  useLatestReadiness,
+} from "@/lib/data/hooks";
 import { LEVEL_META } from "@/lib/data/readiness";
 import { summarizeLoad } from "@/lib/load";
 import { buildExerciseMemory } from "@/lib/lookup";
@@ -20,12 +26,12 @@ export default function CoachPage() {
   const fw = useWeightFmt();
   const lang = useNameLang();
   const muscleName = useMuscleName();
-  const sessions = useLiveQuery(() => db.sessions.toArray(), []);
-  const logs = useLiveQuery(() => db.setLogs.toArray(), []);
-  const exercises = useLiveQuery(() => db.exercises.toArray(), []);
-  const wexs = useLiveQuery(() => db.workoutExercises.toArray(), []);
-  const workouts = useLiveQuery(() => db.workouts.orderBy("dayOrder").toArray(), []);
-  const latestCheck = useLiveQuery(() => db.readinessChecks.orderBy("timestamp").last(), []);
+  const sessions = useAllSessions();
+  const logs = useAllSetLogs();
+  const exercises = useExercises();
+  const wexs = useWorkoutExercises();
+  const workouts = useWorkouts();
+  const latestCheck = useLatestReadiness();
 
   const memories = useMemo(() => {
     if (!exercises || !wexs || !logs || !sessions) return undefined;

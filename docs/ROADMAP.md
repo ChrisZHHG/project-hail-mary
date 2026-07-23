@@ -15,20 +15,24 @@ support coach ↔ client (the "sell" path) — without losing the offline-first 
 - **Stay local-first.** Dexie remains the offline cache; Supabase becomes the
   sync layer / source of truth. Offline keeps working.
 
-## Phase 1 — Repository-seam refactor + robustness  ← PREREQUISITE, pure code, no external deps
+## Phase 1 — Repository-seam refactor + robustness  ✅ DONE (2026-07-23)
 
 Supabase can only "drop in" if every component talks to the `Repository`
-interface. Today **9 files hit Dexie directly** (progress/lookup/coach/train/
-import/freestyle + GearChips/ExecutionCard/SessionView).
+interface. This prerequisite (pure code, no external deps) is now complete:
 
-- Extend `Repository` with every query/mutation the app needs (all-table reads,
-  gear CRUD, setLog update/delete, import bulkPut, etc.).
-- Move every `useLiveQuery(db…)` into `lib/data/hooks.ts` (backed by the repo);
-  components import hooks, never `db`.
-- Add a tiny reactive-subscribe abstraction so a non-Dexie backend can push live
-  updates too.
-- Add `app/error.tsx` (client: retry + export-backup) and `app/not-found.tsx`.
-- **Done when:** `db` is imported only by `lib/data/*`; tests green; build clean.
+- ✅ Extended `Repository` with every query/mutation the app needs — all-table
+  reads, gear read/save, `setLog` update/delete, session import bulkPut,
+  `addExercise`, plus `exportAll`/`importAll`/`schemaVersion` for backup.
+- ✅ Moved every `useLiveQuery(db…)` into `lib/data/hooks.ts` (backed by the
+  repo); components import hooks, never `db`.
+- ✅ Added the reactive-subscribe seam: `useReactiveQuery` in
+  `lib/data/reactive.ts` is the *only* `useLiveQuery` importer — a non-Dexie
+  backend swaps just that one function for realtime subscriptions.
+- ✅ Added `app/error.tsx` (client: retry + export-backup + hard-refresh) and
+  `app/not-found.tsx`.
+- **Done:** `db` is imported only by `lib/data/*` (+ tests); 11 files migrated
+  off direct `db` (the 9 above + `SessionDetail` + `lib/backup.ts`);
+  typecheck / lint / test / build all green.
 
 ## Phase 2 — Supabase cloud + auth (single user, multi-device)
 
@@ -65,7 +69,7 @@ import/freestyle + GearChips/ExecutionCard/SessionView).
 
 ## Execution order
 
-1. **Phase 1** — start now (no external deps). Best run in a **fresh session**:
-   it's a broad refactor that wants a full context budget.
-2. **Phase 2** — after Chris creates the Supabase project.
+1. ~~**Phase 1**~~ — ✅ done (2026-07-23).
+2. **Phase 2** — next; after Chris creates the Supabase project (Project URL +
+   anon key).
 3. **Phases 3–4** — decisions, not yet scheduled.

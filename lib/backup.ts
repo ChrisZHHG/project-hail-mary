@@ -1,20 +1,9 @@
-import { db } from "./data/db";
+import { repo } from "./data/repository";
 
 /** Full-database backup/restore. Local-first means the phone IS the database —
  *  iOS can evict IndexedDB from rarely-used PWAs, so regular exports matter.
- *  The backup is a single JSON file with every table, restorable via bulkPut
- *  (stable ids → restoring over existing data is safe/idempotent). */
-
-const TABLES = [
-  "exercises",
-  "programs",
-  "workouts",
-  "workoutExercises",
-  "sessions",
-  "setLogs",
-  "readinessChecks",
-  "exerciseGear",
-] as const;
+ *  The backup is a single JSON file with every table, restored via the
+ *  Repository's bulkPut (stable ids → restoring over existing data is safe). */
 
 const LS_KEY = "phm-last-backup";
 
@@ -26,13 +15,11 @@ export interface BackupFile {
 }
 
 export async function buildBackup(): Promise<BackupFile> {
-  const tables: Record<string, unknown[]> = {};
-  for (const t of TABLES) tables[t] = await db.table(t).toArray();
   return {
     app: "hail-mary",
-    version: db.verno,
+    version: repo.schemaVersion(),
     exportedAt: new Date().toISOString(),
-    tables,
+    tables: await repo.exportAll(),
   };
 }
 
@@ -56,15 +43,7 @@ export async function restoreBackup(json: string): Promise<Record<string, number
   if (parsed.app !== "hail-mary" || !parsed.tables) {
     throw new Error("Not a Hail Mary backup file");
   }
-  const counts: Record<string, number> = {};
-  for (const t of TABLES) {
-    const rows = parsed.tables[t];
-    if (Array.isArray(rows) && rows.length) {
-      await db.table(t).bulkPut(rows);
-      counts[t] = rows.length;
-    }
-  }
-  return counts;
+  return repo.importAll(parsed.tables);
 }
 
 /** Days since the last export, or null if never backed up. */

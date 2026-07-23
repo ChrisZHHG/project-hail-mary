@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
 import { repo } from "@/lib/data/repository";
+import { useSession, useSessionLogs, useExercises, useWorkoutExercises } from "@/lib/data/hooks";
 import { sumVolume } from "@/lib/volume";
 import { LIBRARY } from "@/lib/library";
 import {
@@ -32,14 +31,10 @@ export default function SessionDetail({ sessionId }: { sessionId: string }) {
   const unit = useUnit();
   const fv = useVolumeFmt();
 
-  const session = useLiveQuery(() => db.sessions.get(sessionId), [sessionId]);
-  const logs =
-    useLiveQuery(
-      () => db.setLogs.where("sessionId").equals(sessionId).sortBy("setNumber"),
-      [sessionId]
-    ) ?? [];
-  const exercises = useLiveQuery(() => db.exercises.toArray(), []);
-  const wexs = useLiveQuery(() => db.workoutExercises.toArray(), []);
+  const session = useSession(sessionId);
+  const logs = useSessionLogs(sessionId) ?? [];
+  const exercises = useExercises();
+  const wexs = useWorkoutExercises();
 
   if (session === undefined || !exercises || !wexs) {
     return <p className="mt-10 text-center text-faint">{t("loading")}</p>;
@@ -113,7 +108,7 @@ function SetRow({ log, exercise, lang }: { log: SetLog; exercise?: Exercise; lan
   const name = exercise ? exerciseNames(exercise, lang).primary : log.exerciseId ?? "—";
 
   async function save() {
-    await db.setLogs.update(log.id, {
+    await repo.updateSet(log.id, {
       weight: w.trim() === "" ? undefined : displayToLbs(Number(w), unit),
       reps: reps.trim() === "" ? undefined : Number(reps),
       rir: rir.trim() === "" ? undefined : Number(rir),
@@ -159,7 +154,7 @@ function SetRow({ log, exercise, lang }: { log: SetLog; exercise?: Exercise; lan
         <button type="button" onClick={save} className="tap flex-1 rounded-lg bg-cyan/15 py-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-cyan">
           {t("save")}
         </button>
-        <button type="button" onClick={() => db.setLogs.delete(log.id)} className="tap rounded-lg border border-danger/50 px-3 py-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-danger">
+        <button type="button" onClick={() => repo.deleteSet(log.id)} className="tap rounded-lg border border-danger/50 px-3 py-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-danger">
           {t("remove")}
         </button>
         <button type="button" onClick={() => setEditing(false)} className="tap px-2 text-[0.7rem] text-faint">
@@ -214,8 +209,8 @@ function AddSet({
 
   async function pick(c: Candidate) {
     if (c.lib) {
-      await db.exercises
-        .put({
+      await repo
+        .addExercise({
           id: c.id,
           name: c.lib.name,
           aliasZh: c.lib.aliasZh,

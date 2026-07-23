@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
+import { repo } from "@/lib/data/repository";
+import { useExercises, useWorkoutExercises, useAllSetLogs, useAllSessions } from "@/lib/data/hooks";
 import { buildExerciseMemory, type ExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
 import { exerciseNames, useNameLang, useUnit, useWeightFmt, lbsToDisplay, displayToLbs } from "@/lib/prefs";
@@ -21,10 +21,10 @@ export default function LookupPage() {
   const [query, setQuery] = useState("");
   const [muscle, setMuscle] = useState<string | null>(null);
 
-  const exercises = useLiveQuery(() => db.exercises.toArray(), []);
-  const wexs = useLiveQuery(() => db.workoutExercises.toArray(), []);
-  const logs = useLiveQuery(() => db.setLogs.toArray(), []);
-  const sessions = useLiveQuery(() => db.sessions.toArray(), []);
+  const exercises = useExercises();
+  const wexs = useWorkoutExercises();
+  const logs = useAllSetLogs();
+  const sessions = useAllSessions();
 
   const memories = useMemo(() => {
     if (!exercises || !wexs || !logs || !sessions) return undefined;
@@ -120,7 +120,7 @@ function EditableEntry({
   const [variant, setVariant] = useState<string>(entry.variant ?? "");
 
   async function saveEdit() {
-    await db.setLogs.update(entry.id, {
+    await repo.updateSet(entry.id, {
       weight: w.trim() === "" ? undefined : displayToLbs(Number(w), unit),
       reps: reps.trim() === "" ? undefined : Number(reps),
       rir: rir.trim() === "" ? undefined : Number(rir),
@@ -131,7 +131,7 @@ function EditableEntry({
   }
 
   async function removeEdit() {
-    await db.setLogs.delete(entry.id);
+    await repo.deleteSet(entry.id);
     setEditing(false);
   }
 

@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
+import {
+  useCompletedSessions,
+  useAllSetLogs,
+  useWorkoutExercises,
+  useExercises,
+  useWorkouts,
+} from "@/lib/data/hooks";
 import { setVolume, sessionTonnageLbs } from "@/lib/volume";
 import VolumeTrend, { type TrendPoint } from "@/components/VolumeTrend";
 import MuscleLoad from "@/components/MuscleLoad";
@@ -30,18 +35,11 @@ export default function ProgressPage() {
   const unit = useUnit();
   const fv = useVolumeFmt();
   const t = useT();
-  const sessions = useLiveQuery(
-    () =>
-      db.sessions
-        .filter((s) => s.completedAt != null)
-        .toArray()
-        .then((r) => r.sort((a, b) => (a.completedAt ?? 0) - (b.completedAt ?? 0))),
-    []
-  );
-  const logs = useLiveQuery(() => db.setLogs.toArray(), []);
-  const wexs = useLiveQuery(() => db.workoutExercises.toArray(), []);
-  const exercises = useLiveQuery(() => db.exercises.toArray(), []);
-  const workouts = useLiveQuery(() => db.workouts.toArray(), []);
+  const sessions = useCompletedSessions();
+  const logs = useAllSetLogs();
+  const wexs = useWorkoutExercises();
+  const exercises = useExercises();
+  const workouts = useWorkouts();
 
   if (!sessions || !logs || !wexs || !exercises || !workouts) {
     return <p className="mt-10 text-center text-faint">{t("loading")}</p>;
@@ -50,7 +48,9 @@ export default function ProgressPage() {
   // Tonnage per session — in-app set logs, or the watch-reported volume (kg→lbs).
   // Sessions with no volume at all (most cardio + watch strength rows without a
   // volume field) don't get a point: a zero would read as a crashed session.
-  const strength = sessions.filter((s) => s.kind !== "cardio");
+  // Hook returns newest-first; the trend wants chronological (oldest → newest).
+  const chrono = [...sessions].reverse();
+  const strength = chrono.filter((s) => s.kind !== "cardio");
   const points: TrendPoint[] = strength
     .map((s) => ({
       label: shortDate(s.date),
@@ -97,8 +97,8 @@ export default function ProgressPage() {
     );
   }
 
-  // Show the full history (newest first) — a hard cap read as "my data vanished".
-  const recent = [...sessions].reverse();
+  // Show the full history (newest first) — already the hook's order.
+  const recent = sessions;
 
   return (
     <div className="flex flex-col gap-5">

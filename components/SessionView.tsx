@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
 import { repo, today } from "@/lib/data/repository";
-import { useExerciseInstances, useSessionLogs, useWorkout } from "@/lib/data/hooks";
+import { useExerciseInstances, useSession, useSessionLogs, useWorkout } from "@/lib/data/hooks";
 import { sumVolume } from "@/lib/volume";
 import Link from "next/link";
 import type { ExerciseInstance, WorkoutSection } from "@/lib/data/types";
@@ -34,10 +32,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
   const workout = useWorkout(workoutId);
   const instances = useExerciseInstances(workoutId);
   const logs = useSessionLogs(sessionId ?? undefined) ?? [];
-  const session = useLiveQuery(
-    () => (sessionId ? db.sessions.get(sessionId) : undefined),
-    [sessionId]
-  );
+  const session = useSession(sessionId ?? undefined);
   const dayLabel = fmtDayLong(session?.date ?? today(), lang);
 
   // Resume an in-progress session that already has sets; do not create empty shells.
@@ -52,7 +47,7 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
         if (existingLogs.some((l) => l.done)) {
           setSessionId(existing.id);
         } else {
-          await db.sessions.delete(existing.id);
+          await repo.deleteSession(existing.id);
         }
       }
       if (alive) setReady(true);

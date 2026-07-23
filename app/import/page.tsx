@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/data/db";
+import { repo } from "@/lib/data/repository";
 import { parseWatchRows, toSession, watchSessionId } from "@/lib/data/watchCsv";
 import { fmtDayLong } from "@/lib/dates";
 import { downloadBackup, restoreBackup } from "@/lib/backup";
@@ -24,7 +24,7 @@ export default function ImportPage() {
 
   async function commit() {
     const sessions = rows.map(toSession);
-    await db.sessions.bulkPut(sessions);
+    await repo.importSessions(sessions);
     setDone(sessions.length);
     setTimeout(() => router.push("/progress"), 900);
   }

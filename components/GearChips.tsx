@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
+import { repo } from "@/lib/data/repository";
+import { useGear } from "@/lib/data/hooks";
 import { useNameLang } from "@/lib/prefs";
 import { useT } from "@/lib/i18n";
 import { GEAR_LABELS, SUGGESTED_KEYS, DEFAULT_KEYS } from "@/lib/gear";
@@ -19,7 +19,7 @@ export default function GearChips({
 }) {
   const lang = useNameLang();
   const t = useT();
-  const gear = useLiveQuery(() => db.exerciseGear.get(exerciseId), [exerciseId]);
+  const gear = useGear(exerciseId);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [customKey, setCustomKey] = useState("");
@@ -50,11 +50,7 @@ export default function GearChips({
     const cv = customValue.trim();
     if (ck && cv) values[ck] = cv;
 
-    if (Object.keys(values).length === 0) {
-      await db.exerciseGear.delete(exerciseId);
-    } else {
-      await db.exerciseGear.put({ exerciseId, values, updatedAt: Date.now() });
-    }
+    await repo.saveGear(exerciseId, values);
     setOpen(false);
   }
 

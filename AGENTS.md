@@ -29,15 +29,17 @@ correctly; don't "fix" them.)
   pushing `main` alone does not deploy.
 - **BUMP `VERSION` in `public/sw.js` on EVERY deploy** meant to reach installed
   PWAs, or the service worker keeps serving the cached old app (it has no other
-  update signal). Currently `phm-v20`.
+  update signal). Currently `phm-v21`.
 - A stuck client can force-refresh in-app: 数据 · 备份 · 刷新 → 刷新应用.
 
 ## Architecture
-- **Repository seam:** components should talk to the `Repository` interface
+- **Repository seam:** components talk to the `Repository` interface
   (`lib/data/repository.ts`) + reactive hooks (`lib/data/hooks.ts`), NOT Dexie
-  directly. Currently **leaky** — ~9 files import `db` directly; fixing it is
-  Phase 1 of `docs/ROADMAP.md` (prerequisite for the planned Supabase backend).
-  Don't add new direct-`db` usage in components.
+  directly. **Enforced (Phase 1 done):** `db` is imported only inside
+  `lib/data/*`; every live read goes through `useReactiveQuery`
+  (`lib/data/reactive.ts`) — the single `useLiveQuery` seam a Supabase adapter
+  swaps. Don't add direct-`db` usage outside `lib/data/*`; put new
+  queries/mutations on `Repository`, never ad-hoc in a component.
 - **Domain model** (`lib/data/types.ts`): program → workout → workoutExercise →
   setLog, plus readinessCheck and exerciseGear.
 - **Seed & migrations** (`lib/data/db.ts`, `lib/data/seed.ts`): Dexie versioned
@@ -64,4 +66,5 @@ correctly; don't "fix" them.)
 
 ## What's next
 See **`docs/ROADMAP.md`** — the cloud (Supabase) + coach↔client productization
-plan. Start with Phase 1 (repository-seam refactor + error boundaries).
+plan. **Phase 1 (repository-seam refactor + error boundaries) is done**; next is
+Phase 2 (Supabase cloud + auth), which needs a Supabase project from Chris first.

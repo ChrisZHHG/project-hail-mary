@@ -2,12 +2,15 @@ import Dexie from "dexie";
 import { db } from "./db";
 import { scoreReadiness, type ReadinessExtras, type ReadinessInput } from "./readiness";
 import type {
+  Exercise,
+  ExerciseGear,
   ExerciseInstance,
   Program,
   ReadinessCheck,
   Session,
   SetLog,
   Workout,
+  WorkoutExercise,
 } from "./types";
 
 const uid = () =>
@@ -37,35 +40,85 @@ export const isWeekend = (d = new Date()) => d.getDay() === 0 || d.getDay() === 
  * without touching any component. See README "Going multi-user".
  */
 export interface Repository {
+  /* ---- catalog / program (all-table reads back the reactive hooks) ---- */
   getPrograms(): Promise<Program[]>;
   getWorkouts(programId: string): Promise<Workout[]>;
+  /** Every workout, ordered by dayOrder (no program filter). */
+  getAllWorkouts(): Promise<Workout[]>;
   getWorkout(workoutId: string): Promise<Workout | undefined>;
+  getExercises(): Promise<Exercise[]>;
+  getWorkoutExercises(): Promise<WorkoutExercise[]>;
   /** Joined + ordered assignments the logger renders. */
   getExerciseInstances(workoutId: string): Promise<ExerciseInstance[]>;
-  /** Most recent completed entry for an exercise (for "last time" + prefill). */
-  getLastEntry(workoutExerciseId: string, excludeSessionId?: string): Promise<SetLog | undefined>;
+  /** Add/overwrite one exercise (custom entry or library pick). Idempotent. */
+  addExercise(exercise: Exercise): Promise<void>;
 
+  /* ---- sessions ---- */
   getActiveSession(workoutId: string): Promise<Session | undefined>;
+  getAllSessions(): Promise<Session[]>;
+  /** Completed sessions, newest first. */
+  getCompletedSessions(): Promise<Session[]>;
+  /** Open (uncompleted) in-app sessions — excludes watch imports. */
+  getOpenSessions(): Promise<Session[]>;
+  /** The open freestyle session (no program workout), if any. */
+  getOpenFreestyleSession(): Promise<Session | undefined>;
   startSession(workoutId: string): Promise<Session>;
   /** Freestyle = a session with no program workout; sets log by exerciseId. */
   startFreestyleSession(): Promise<Session>;
   completeSession(sessionId: string): Promise<void>;
+  deleteSession(sessionId: string): Promise<void>;
   /**
    * Open sessions from a previous calendar day: complete if they have any
    * done sets, otherwise delete the empty shell. Idempotent.
    */
   cleanupStaleOpenSessions(): Promise<void>;
   getSession(sessionId: string): Promise<Session | undefined>;
+  /** Bulk import/upsert sessions (watch CSV paste). Stable ids → idempotent. */
+  importSessions(sessions: Session[]): Promise<void>;
+
+  /* ---- set logs ---- */
   getSetLogs(sessionId: string): Promise<SetLog[]>;
+  getAllSetLogs(): Promise<SetLog[]>;
+  /** Sets logged this session against a program assignment, ordered by set #. */
+  getSessionInstanceLogs(sessionId: string, workoutExerciseId: string): Promise<SetLog[]>;
+  /** Sets logged this session against a bare exercise, ordered by set #. */
+  getSessionExerciseLogs(sessionId: string, exerciseId: string): Promise<SetLog[]>;
+  /** Most recent completed entry for an exercise (for "last time" + prefill). */
+  getLastEntry(workoutExerciseId: string, excludeSessionId?: string): Promise<SetLog | undefined>;
   upsertSet(log: Omit<SetLog, "id" | "timestamp"> & { id?: string }): Promise<SetLog>;
+  /** Patch a set in place — keeps its timestamp so history order stays stable. */
+  updateSet(id: string, patch: Partial<Omit<SetLog, "id">>): Promise<void>;
   deleteSet(id: string): Promise<void>;
 
+  /* ---- readiness ---- */
   saveReadiness(input: ReadinessInput & ReadinessExtras): Promise<ReadinessCheck>;
   getReadiness(date: string): Promise<ReadinessCheck | undefined>;
   getLatestReadiness(): Promise<ReadinessCheck | undefined>;
   /** The check-in for the current (Mon–Sun) week, if any. */
   getWeeklyReadiness(): Promise<ReadinessCheck | undefined>;
+
+  /* ---- per-exercise gear (machine setup memory) ---- */
+  getGear(exerciseId: string): Promise<ExerciseGear | undefined>;
+  /** Save setup values; empty values clears the row. Stamps updatedAt. */
+  saveGear(exerciseId: string, values: Record<string, string>): Promise<void>;
+
+  /* ---- full-database backup / restore ---- */
+  exportAll(): Promise<Record<string, unknown[]>>;
+  importAll(tables: Record<string, unknown[]>): Promise<Record<string, number>>;
+  schemaVersion(): number;
 }
+
+/** Every table in the schema — the unit of a full backup/restore. */
+const BACKUP_TABLES = [
+  "exercises",
+  "programs",
+  "workouts",
+  "workoutExercises",
+  "sessions",
+  "setLogs",
+  "readinessChecks",
+  "exerciseGear",
+] as const;
 
 class DexieRepository implements Repository {
   getPrograms() {
@@ -164,7 +217,7 @@ class DexieRepository implements Repository {
   }
 
   getSetLogs(sessionId: string) {
-    return db.setLogs.where("sessionId").equals(sessionId).toArray();
+    return db.setLogs.where("sessionId").equals(sessionId).sortBy("setNumber");
   }
 
   async upsertSet(log: Omit<SetLog, "id" | "timestamp"> & { id?: string }) {
@@ -210,6 +263,112 @@ class DexieRepository implements Repository {
     const start = weekStart();
     const inWeek = await db.readinessChecks.where("date").aboveOrEqual(start).toArray();
     return inWeek.sort((a, b) => b.timestamp - a.timestamp)[0];
+  }
+
+  /* ---- catalog / program ---- */
+  getAllWorkouts() {
+    return db.workouts.orderBy("dayOrder").toArray();
+  }
+
+  getExercises() {
+    return db.exercises.toArray();
+  }
+
+  getWorkoutExercises() {
+    return db.workoutExercises.toArray();
+  }
+
+  async addExercise(exercise: Exercise) {
+    await db.exercises.put(exercise);
+  }
+
+  /* ---- sessions ---- */
+  getAllSessions() {
+    return db.sessions.toArray();
+  }
+
+  async getCompletedSessions() {
+    const rows = await db.sessions.filter((s) => s.completedAt != null).toArray();
+    return rows.sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
+  }
+
+  getOpenSessions() {
+    return db.sessions.filter((s) => s.completedAt == null && s.source !== "watch").toArray();
+  }
+
+  getOpenFreestyleSession() {
+    return db.sessions
+      .filter((s) => !s.workoutId && s.completedAt == null && s.source !== "watch")
+      .first();
+  }
+
+  async deleteSession(sessionId: string) {
+    await db.sessions.delete(sessionId);
+  }
+
+  async importSessions(sessions: Session[]) {
+    await db.sessions.bulkPut(sessions);
+  }
+
+  /* ---- set logs ---- */
+  getAllSetLogs() {
+    return db.setLogs.toArray();
+  }
+
+  getSessionInstanceLogs(sessionId: string, workoutExerciseId: string) {
+    return db.setLogs
+      .where("sessionId")
+      .equals(sessionId)
+      .and((l) => l.workoutExerciseId === workoutExerciseId)
+      .sortBy("setNumber");
+  }
+
+  getSessionExerciseLogs(sessionId: string, exerciseId: string) {
+    return db.setLogs
+      .where("sessionId")
+      .equals(sessionId)
+      .and((l) => l.exerciseId === exerciseId)
+      .sortBy("setNumber");
+  }
+
+  async updateSet(id: string, patch: Partial<Omit<SetLog, "id">>) {
+    await db.setLogs.update(id, patch);
+  }
+
+  /* ---- gear ---- */
+  getGear(exerciseId: string) {
+    return db.exerciseGear.get(exerciseId);
+  }
+
+  async saveGear(exerciseId: string, values: Record<string, string>) {
+    if (Object.keys(values).length === 0) {
+      await db.exerciseGear.delete(exerciseId);
+    } else {
+      await db.exerciseGear.put({ exerciseId, values, updatedAt: Date.now() });
+    }
+  }
+
+  /* ---- backup ---- */
+  async exportAll() {
+    const tables: Record<string, unknown[]> = {};
+    for (const t of BACKUP_TABLES) tables[t] = await db.table(t).toArray();
+    return tables;
+  }
+
+  async importAll(tables: Record<string, unknown[]>) {
+    const counts: Record<string, number> = {};
+    for (const t of BACKUP_TABLES) {
+      const rows = tables[t];
+      if (Array.isArray(rows) && rows.length) {
+        await db.table(t).bulkPut(rows);
+        counts[t] = rows.length;
+      }
+    }
+    return counts;
+  }
+
+  schemaVersion() {
+    return db.verno;
   }
 }
 

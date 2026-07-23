@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
 import { repo } from "@/lib/data/repository";
-import { useWorkouts } from "@/lib/data/hooks";
+import { useWorkouts, useOpenSessions, useAllSetLogs } from "@/lib/data/hooks";
 import { useT } from "@/lib/i18n";
 
 export default function TrainPage() {
@@ -16,12 +14,8 @@ export default function TrainPage() {
     void repo.cleanupStaleOpenSessions();
   }, []);
 
-  const openSessions =
-    useLiveQuery(
-      () => db.sessions.filter((s) => s.completedAt == null && s.source !== "watch").toArray(),
-      []
-    ) ?? [];
-  const allLogs = useLiveQuery(() => db.setLogs.toArray(), []) ?? [];
+  const openSessions = useOpenSessions() ?? [];
+  const allLogs = useAllSetLogs() ?? [];
   const sessionIdsWithSets = new Set(
     allLogs.filter((l) => l.done).map((l) => l.sessionId)
   );

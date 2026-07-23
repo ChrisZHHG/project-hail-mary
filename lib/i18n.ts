@@ -274,6 +274,17 @@ const DICT = {
   refreshAppHint: ["清缓存并加载最新版（主屏幕 App 没有下拉刷新）", "Clear cache and load the latest version (home-screen app has no pull-to-refresh)"],
   refreshing: ["正在刷新…", "Refreshing…"],
   dataAndBackup: ["数据 · 备份 · 刷新", "Data · backup · refresh"],
+
+  // error boundary + 404
+  errorTitle: ["出错了", "Something broke"],
+  errorBody: [
+    "应用遇到一个错误。你的数据仍安全存在这台手机上 —— 可以先导出备份,再重试或刷新。",
+    "The app hit an error. Your data is still safe on this device — export a backup, then retry or refresh.",
+  ],
+  errorRetry: ["重试", "Try again"],
+  notFoundTitle: ["页面不存在", "Page not found"],
+  notFoundBody: ["这里什么都没有 —— 链接可能已过期。", "There's nothing here — the link may be stale."],
+  goHome: ["回到首页", "Back home"],
 } as const;
 
 export type I18nKey = keyof typeof DICT;

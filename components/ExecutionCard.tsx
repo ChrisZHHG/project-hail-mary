@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/data/db";
 import { repo } from "@/lib/data/repository";
+import { useSessionInstanceLogs, useLastEntry } from "@/lib/data/hooks";
 import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { theoryForExercise } from "@/lib/theory";
 import { exerciseNames, useNameLang, useWeightFmt } from "@/lib/prefs";
 import { useT, useMuscleName, useCardioSpecLabel } from "@/lib/i18n";
-import type { ExerciseInstance, SetLog } from "@/lib/data/types";
+import type { ExerciseInstance } from "@/lib/data/types";
 import Stepper from "./Stepper";
 import WeightControl from "./WeightControl";
 import RirSelector from "./RirSelector";
@@ -56,24 +55,10 @@ export default function ExecutionCard({
   const names = exerciseNames(exercise, lang);
   const fw = useWeightFmt();
   const mTag = tagKey ? t(tagKey) : null;
-  const logs =
-    useLiveQuery(
-      () =>
-        sessionId
-          ? db.setLogs
-              .where("sessionId")
-              .equals(sessionId)
-              .and((l) => l.workoutExerciseId === instance.id)
-              .sortBy("setNumber")
-          : Promise.resolve([] as SetLog[]),
-      [sessionId, instance.id]
-    ) ?? [];
+  const logs = useSessionInstanceLogs(sessionId, instance.id) ?? [];
 
   // Previous *session* entry for the "last time" hint + cold prefill.
-  const lastEntry = useLiveQuery(
-    () => repo.getLastEntry(instance.id, sessionId ?? undefined),
-    [instance.id, sessionId]
-  );
+  const lastEntry = useLastEntry(instance.id, sessionId ?? undefined);
 
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [editing, setEditing] = useState<Set<number>>(new Set());
