@@ -29,7 +29,7 @@ correctly; don't "fix" them.)
   pushing `main` alone does not deploy.
 - **BUMP `VERSION` in `public/sw.js` on EVERY deploy** meant to reach installed
   PWAs, or the service worker keeps serving the cached old app (it has no other
-  update signal). Currently `phm-v21`.
+  update signal). Currently `phm-v22`.
 - A stuck client can force-refresh in-app: 数据 · 备份 · 刷新 → 刷新应用.
 
 ## Architecture
