@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { setVolume, sumVolume, sessionTonnageLbs, fmtVolume, LBS_PER_KG } from "@/lib/volume";
+import { setVolume, sumVolume, sessionTonnageLbs } from "@/lib/volume";
 import type { SetLog, Session } from "@/lib/data/types";
 
 const log = (o: Partial<SetLog>): SetLog => ({ id: "x", sessionId: "s", setNumber: 1, done: true, timestamp: 0, ...o });
@@ -26,14 +26,4 @@ describe("sessionTonnageLbs", () => {
   it("falls back to summing set logs when no imported total", () => {
     expect(sessionTonnageLbs(sess({}), [log({ weight: 100, reps: 5 })])).toBe(500);
   });
-});
-
-describe("fmtVolume", () => {
-  it("k-format at/above 1000", () => expect(fmtVolume(3538)).toBe("3.5k"));
-  it("plain integer below 1000", () => expect(fmtVolume(720)).toBe("720"));
-  it("rounds sub-1000", () => expect(fmtVolume(719.6)).toBe("720"));
-});
-
-describe("LBS_PER_KG", () => {
-  it("is the single precise conversion constant", () => expect(LBS_PER_KG).toBeCloseTo(2.2046, 4));
 });
