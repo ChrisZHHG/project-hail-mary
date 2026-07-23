@@ -48,6 +48,43 @@ const DICT = {
   ],
   coachEyebrow: ["教练视图 · 只读", "Coach view · read-only"],
   coachClients: ["学员", "Clients"],
+  coachProgramBlock: ["全身训练计划", "Full-Body Block"],
+  coachSessionsWeek: ["本周训练", "sessions this week"],
+  coachNeedsAttention: ["⚠ 需要注意", "⚠ Needs attention"],
+  coachNoFlags: ["暂无警示", "No red flags"],
+  coachAllInRange: ["打卡、酸痛、睡眠、负荷比都在正常范围。", "Check-in, soreness, sleep and load ratio are all within range."],
+  coachLatestCheckin: ["最近打卡", "Latest check-in"],
+  coachNoCheckin: ["还没有打卡。", "No check-in yet."],
+  coachProgramVsActual: ["计划 vs 实际", "Program vs. actual"],
+  coachProgramVsActualSub: ["目标 — 以及学员上次记录的最重一组。", "Target — and the last top set the client logged."],
+  coachImportCsv: ["导入手表记录 (CSV)", "Import watch history (CSV)"],
+  coachReadonlyFooter: [
+    "本设备数据的只读视图。多学员同步将随账号系统上线。",
+    "Read-only view of this device’s data. Multi-client sync arrives with accounts.",
+  ],
+  coachFlagJoint: [
+    "每周打卡关节痛 {n}/5 — 训练量已自动下调。",
+    "Joint pain {n}/5 on the weekly check-in — volume was auto-flagged for downscale.",
+  ],
+  coachFlagSore: [
+    "{area} 酸痛 {v}/10 — 再加练前先确认恢复。",
+    "{area} soreness at {v}/10 — check recovery before loading it again.",
+  ],
+  coachFlagAcr: [
+    "急性:慢性负荷比 {v} — 训练负荷相对基线在飙升。",
+    "Acute:chronic load ratio {v} — training load is spiking vs. baseline.",
+  ],
+  coachFlagSleep: ["平均睡眠 {h} 小时 — 恢复上限偏低。", "Averaging {h}h sleep — recovery ceiling is low."],
+  theorySecPrinciples: ["原则", "Principles"],
+  theorySecPrinciplesBlurb: ["每一组背后的规则。", "The rules behind every set."],
+  theorySecCorrectives: ["纠正 · 肩颈方案", "Correctives — The Shoulder Story"],
+  theorySecCorrectivesBlurb: [
+    "针对高低肩 / 颈部紧张。每天 1-2 次,练前做,坚持 6-8 周。",
+    "For high shoulders / tight neck. 1-2× daily, before training, 6-8 weeks.",
+  ],
+  theorySecHabits: ["习惯", "Habits"],
+  theorySecHabitsBlurb: ["全天该多做、该少做的。", "What to do more of — and less of — all day."],
+  theoryAppliesAll: ["适用于所有训练", "Applies to all training"],
   cardioZone2: ["2区有氧", "Zone 2 Cardio"],
 
   // today

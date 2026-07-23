@@ -3,15 +3,12 @@
 import { useEffect, useState } from "react";
 import { THEORY, type TheoryCategory, type TheoryItem } from "@/lib/theory";
 import { SEED_EXERCISES } from "@/lib/data/seed";
+import { useT, type I18nKey } from "@/lib/i18n";
 
-const SECTIONS: { category: TheoryCategory; label: string; blurb: string }[] = [
-  { category: "principle", label: "Principles", blurb: "The rules behind every set." },
-  {
-    category: "corrective",
-    label: "Correctives — The Shoulder Story",
-    blurb: "For high shoulders / tight neck. 1-2× daily, before training, 6-8 weeks.",
-  },
-  { category: "habit", label: "Habits", blurb: "What to do more of — and less of — all day." },
+const SECTIONS: { category: TheoryCategory; labelKey: I18nKey; blurbKey: I18nKey }[] = [
+  { category: "principle", labelKey: "theorySecPrinciples", blurbKey: "theorySecPrinciplesBlurb" },
+  { category: "corrective", labelKey: "theorySecCorrectives", blurbKey: "theorySecCorrectivesBlurb" },
+  { category: "habit", labelKey: "theorySecHabits", blurbKey: "theorySecHabitsBlurb" },
 ];
 
 /** Exercises this theory item attaches to (explicit ids ∪ muscle match). */
@@ -23,6 +20,7 @@ function linkedExercises(t: TheoryItem): string[] {
 }
 
 export default function TheoryList() {
+  const tr = useT();
   const [highlight, setHighlight] = useState<string | null>(null);
 
   // Deep links from training cards: /method#th-… → scroll + glow. Reading the
@@ -39,10 +37,10 @@ export default function TheoryList() {
 
   return (
     <div className="flex flex-col gap-6">
-      {SECTIONS.map(({ category, label, blurb }) => (
+      {SECTIONS.map(({ category, labelKey, blurbKey }) => (
         <section key={category}>
-          <h2 className="eyebrow px-1">{label}</h2>
-          <p className="mb-2 mt-0.5 px-1 text-[0.75rem] text-faint">{blurb}</p>
+          <h2 className="eyebrow px-1">{tr(labelKey)}</h2>
+          <p className="mb-2 mt-0.5 px-1 text-[0.75rem] text-faint">{tr(blurbKey)}</p>
           <div className="flex flex-col gap-3">
             {THEORY.filter((t) => t.category === category).map((t) => {
               const linked = linkedExercises(t);
@@ -87,7 +85,7 @@ export default function TheoryList() {
                     </div>
                   ) : t.general ? (
                     <p className="mt-2.5 border-t border-line pt-2 text-[0.6rem] uppercase tracking-wider text-faint">
-                      Applies to all training
+                      {tr("theoryAppliesAll")}
                     </p>
                   ) : null}
                   {t.source ? (

@@ -9,15 +9,17 @@ import { LEVEL_META } from "@/lib/data/readiness";
 import { summarizeLoad } from "@/lib/load";
 import { buildExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
-import { useWeightFmt } from "@/lib/prefs";
+import { useWeightFmt, useNameLang, exerciseNames } from "@/lib/prefs";
 import LoadGauge from "@/components/LoadGauge";
-import { useT } from "@/lib/i18n";
+import { useT, useMuscleName } from "@/lib/i18n";
 
 /** Read-only coach dashboard — one client card (Chris) for now, structured so
  *  a client list can wrap it once accounts/sync exist. */
 export default function CoachPage() {
   const t = useT();
   const fw = useWeightFmt();
+  const lang = useNameLang();
+  const muscleName = useMuscleName();
   const sessions = useLiveQuery(() => db.sessions.toArray(), []);
   const logs = useLiveQuery(() => db.setLogs.toArray(), []);
   const exercises = useLiveQuery(() => db.exercises.toArray(), []);
@@ -43,16 +45,17 @@ export default function CoachPage() {
   // Red flags — the things the coach would actually act on.
   const flags: string[] = [];
   if (latestCheck && latestCheck.jointPain > 3) {
-    flags.push(`Joint pain ${latestCheck.jointPain}/5 on the weekly check-in — volume was auto-flagged for downscale.`);
+    flags.push(t("coachFlagJoint").replace("{n}", String(latestCheck.jointPain)));
   }
   for (const [area, val] of Object.entries(latestCheck?.soreMap ?? {})) {
-    if (val >= 7) flags.push(`${area} soreness at ${val}/10 — check recovery before loading it again.`);
+    if (val >= 7)
+      flags.push(t("coachFlagSore").replace("{area}", muscleName(area)).replace("{v}", String(val)));
   }
   if (load.acr != null && load.acr > 1.5) {
-    flags.push(`Acute:chronic load ratio ${load.acr.toFixed(2)} — training load is spiking vs. baseline.`);
+    flags.push(t("coachFlagAcr").replace("{v}", load.acr.toFixed(2)));
   }
   if (latestCheck?.sleepHours != null && latestCheck.sleepHours < 6.5) {
-    flags.push(`Averaging ${latestCheck.sleepHours}h sleep — recovery ceiling is low.`);
+    flags.push(t("coachFlagSleep").replace("{h}", String(latestCheck.sleepHours)));
   }
 
   const memByExercise = new Map(memories.map((m) => [m.exercise.id, m]));
@@ -69,20 +72,20 @@ export default function CoachPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-ink">Chris</h2>
-            <p className="eyebrow mt-0.5">Full-Body Block</p>
+            <p className="eyebrow mt-0.5">{t("coachProgramBlock")}</p>
           </div>
           <div className="text-right">
             <p className="tnum text-2xl font-bold text-cyan">
               {thisWeek.length}<span className="text-base text-faint">/3</span>
             </p>
-            <p className="eyebrow">sessions this week</p>
+            <p className="eyebrow">{t("coachSessionsWeek")}</p>
           </div>
         </div>
       </section>
 
       {/* Red flags */}
       <section className={`panel p-4 ${flags.length ? "border-danger/50" : ""}`}>
-        <h2 className="eyebrow mb-2">{flags.length ? "⚠ Needs attention" : "No red flags"}</h2>
+        <h2 className="eyebrow mb-2">{flags.length ? t("coachNeedsAttention") : t("coachNoFlags")}</h2>
         {flags.length ? (
           <ul className="flex flex-col gap-2">
             {flags.map((f, i) => (
@@ -90,25 +93,23 @@ export default function CoachPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-[0.85rem] text-muted">
-            Check-in, soreness, sleep and load ratio are all within range.
-          </p>
+          <p className="text-[0.85rem] text-muted">{t("coachAllInRange")}</p>
         )}
       </section>
 
       {/* Latest check-in */}
       <section className="panel p-4">
         <div className="mb-2 flex items-baseline justify-between">
-          <h2 className="eyebrow">Latest check-in</h2>
+          <h2 className="eyebrow">{t("coachLatestCheckin")}</h2>
           {latestCheck ? (
-            <span className="text-[0.65rem] text-faint">{fmtDayLong(latestCheck.date)}</span>
+            <span className="text-[0.65rem] text-faint">{fmtDayLong(latestCheck.date, lang)}</span>
           ) : null}
         </div>
         {latestCheck ? (
           <>
             <div className="flex items-center gap-3">
               <span className={`text-sm font-bold ${LEVEL_META[latestCheck.level].color}`}>
-                {LEVEL_META[latestCheck.level].label}
+                {lang === "zh" ? LEVEL_META[latestCheck.level].labelZh : LEVEL_META[latestCheck.level].label}
               </span>
               <span className="tnum text-xl font-bold text-ink">
                 {latestCheck.totalScore}<span className="text-sm text-faint">/100</span>
@@ -129,7 +130,7 @@ export default function CoachPage() {
                       v >= 7 ? "border-danger/60 text-danger" : v >= 4 ? "border-warn/60 text-warn" : "border-line text-muted"
                     }`}
                   >
-                    {area} <span className="tnum">{v}/10</span>
+                    {muscleName(area)} <span className="tnum">{v}/10</span>
                   </span>
                 ))}
               </div>
@@ -141,7 +142,7 @@ export default function CoachPage() {
             ) : null}
           </>
         ) : (
-          <p className="text-[0.85rem] text-muted">No check-in yet.</p>
+          <p className="text-[0.85rem] text-muted">{t("coachNoCheckin")}</p>
         )}
       </section>
 
@@ -149,8 +150,8 @@ export default function CoachPage() {
 
       {/* Program vs actual */}
       <section className="panel p-4">
-        <h2 className="eyebrow mb-1">Program vs. actual</h2>
-        <p className="mb-3 text-[0.7rem] text-faint">Target — and the last top set the client logged.</p>
+        <h2 className="eyebrow mb-1">{t("coachProgramVsActual")}</h2>
+        <p className="mb-3 text-[0.7rem] text-faint">{t("coachProgramVsActualSub")}</p>
         <div className="flex flex-col gap-4">
           {workouts.map((wo) => (
             <div key={wo.id}>
@@ -165,7 +166,7 @@ export default function CoachPage() {
                     const last = memByExercise.get(ex.id)?.last;
                     return (
                       <li key={we.id} className="flex items-baseline justify-between gap-2 py-1.5">
-                        <span className="min-w-0 truncate text-[0.8rem] text-ink">{ex.name}</span>
+                        <span className="min-w-0 truncate text-[0.8rem] text-ink">{exerciseNames(ex, lang).primary}</span>
                         <span className="tnum shrink-0 text-right text-[0.7rem]">
                           <span className="text-faint">
                             {we.targetSets}×{we.targetRepsRange}
@@ -173,7 +174,7 @@ export default function CoachPage() {
                           </span>
                           {last ? (
                             <span className="ml-2 text-cyan">
-                              {last.weight != null ? fw(last.weight) : "BW"}
+                              {last.weight != null ? fw(last.weight) : t("bw")}
                               {last.reps != null ? `×${last.reps}` : ""}
                             </span>
                           ) : (
@@ -193,13 +194,11 @@ export default function CoachPage() {
         href="/import"
         className="panel flex items-center justify-between p-4 text-sm text-muted transition active:scale-[0.99]"
       >
-        <span>Import watch history (CSV)</span>
+        <span>{t("coachImportCsv")}</span>
         <span className="text-cyan">→</span>
       </Link>
 
-      <p className="text-center text-[0.65rem] leading-relaxed text-faint">
-        Read-only view of this device&apos;s data. Multi-client sync arrives with accounts.
-      </p>
+      <p className="text-center text-[0.65rem] leading-relaxed text-faint">{t("coachReadonlyFooter")}</p>
     </div>
   );
 }
