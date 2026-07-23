@@ -11,10 +11,9 @@ export const sumVolume = (logs: SetLog[]) => logs.reduce((s, l) => s + setVolume
 export const LBS_PER_KG = 2.2046226218;
 
 /** Session tonnage in lbs. If a session carries a manually-entered total
- *  (`importedVolumeKg` — a legacy field name; the value is actually **lbs**,
- *  since the watch never measured lifting volume) use it, else sum the sets. */
+ *  (`importedVolumeLbs`) use it, else sum the individual set logs. */
 export const sessionTonnageLbs = (session: Session, sessionLogs: SetLog[]) => {
-  if (session.importedVolumeKg) return session.importedVolumeKg;
+  if (session.importedVolumeLbs) return session.importedVolumeLbs;
   return sumVolume(sessionLogs);
 };
 

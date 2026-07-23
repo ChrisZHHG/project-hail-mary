@@ -71,7 +71,7 @@ export default function ImportPage() {
                 </span>
                 <span className="tnum shrink-0 text-right text-faint">
                   {fmtDur(r.durationSec)}
-                  {r.volumeKg ? ` · ${r.volumeKg.toLocaleString()} kg` : ""}
+                  {r.volumeLbs ? ` · ${r.volumeLbs.toLocaleString()} lbs` : ""}
                   {r.avgHr ? ` · ${r.avgHr} bpm` : ""}
                 </span>
               </li>

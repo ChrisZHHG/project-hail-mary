@@ -137,7 +137,7 @@ export default function ProgressPage() {
             const sessionLogs = logs.filter((l) => l.sessionId === s.id);
             const vol = sessionTonnageLbs(s, sessionLogs);
             // "~" = tonnage comes from reconstructed sets, not a measured value
-            const approx = !s.importedVolumeKg && sessionLogs.some((l) => l.estimated);
+            const approx = !s.importedVolumeLbs && sessionLogs.some((l) => l.estimated);
             const name =
               (s.workoutId && woById.get(s.workoutId)?.name) ||
               (s.kind === "cardio" ? t("cardioLabel") : t("strengthLabel"));

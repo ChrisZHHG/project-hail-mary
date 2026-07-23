@@ -151,6 +151,23 @@ export class HailMaryDB extends Dexie {
         await tx.table("setLogs").bulkPut(JULY14_TOEPRESS_LOGS);
       });
 
+    /* v10 — rename the misnamed `importedVolumeKg` session field to
+     * `importedVolumeLbs`. The value was always lbs (the watch never measured
+     * kg), so this only renames the key; the number is unchanged. */
+    this.version(10)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx
+          .table("sessions")
+          .toCollection()
+          .modify((s: Record<string, unknown>) => {
+            if (typeof s.importedVolumeKg === "number") {
+              s.importedVolumeLbs = s.importedVolumeKg;
+              delete s.importedVolumeKg;
+            }
+          });
+      });
+
     this.on("populate", () => this.seed());
   }
 

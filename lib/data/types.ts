@@ -72,9 +72,9 @@ export interface Session {
   durationSec?: number;
   kcal?: number;
   avgHr?: number;
-  /** Manually-entered session total, in **lbs**. Legacy field name: the watch
-   *  never measured lifting volume, so this is an estimate, not kilograms. */
-  importedVolumeKg?: number;
+  /** Manually-entered session total, in lbs (the watch never measured lifting
+   *  volume, so this is an estimate). */
+  importedVolumeLbs?: number;
   /** Original clock time as recorded, e.g. "8:29 AM". */
   clockTime?: string;
 }

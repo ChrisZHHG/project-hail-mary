@@ -6,7 +6,7 @@ import type { Session } from "./types";
  *  manual bridge until a real HealthKit integration exists.
  *
  *  Expected columns (header row optional):
- *  日期, 具体时间, 训练类型 (Type), 训练时长, 消耗热量 (kcal), 训练容量 (kg), 平均心率 (bpm)
+ *  日期, 具体时间, 训练类型 (Type), 训练时长, 消耗热量 (kcal), 训练容量 (lbs), 平均心率 (bpm)
  *  Values like: 2026年6月7日 · 8:29 AM · 晨间力量训练 · 49分33秒 / 1小时4分 · 270 · "3,538" · 101
  */
 
@@ -17,7 +17,7 @@ export interface ParsedWatchRow {
   typeLabel: string;
   durationSec?: number;
   kcal?: number;
-  volumeKg?: number;
+  volumeLbs?: number;
   avgHr?: number;
   startedAt: number;
 }
@@ -107,7 +107,7 @@ export function parseWatchRows(text: string): ParsedWatchRow[] {
       kind: kindOf(f[2] ?? ""),
       durationSec: parseDuration(f[3] ?? ""),
       kcal: parseNum(f[4] ?? ""),
-      volumeKg: parseNum(f[5] ?? ""),
+      volumeLbs: parseNum(f[5] ?? ""),
       avgHr: parseNum(f[6] ?? ""),
       startedAt,
     });
@@ -133,7 +133,7 @@ export function toSession(r: ParsedWatchRow): Session {
     durationSec: r.durationSec,
     kcal: r.kcal,
     avgHr: r.avgHr,
-    importedVolumeKg: r.volumeKg,
+    importedVolumeLbs: r.volumeLbs,
     clockTime: r.clockTime,
   };
 }
