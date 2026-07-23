@@ -111,8 +111,8 @@ const DICT = {
   customWeighted: ["带重量", "Weighted"],
   addExercise: ["添加", "Add"],
   illustrationCredit: [
-    "动作插画来自 wger.de 社区 (CC-BY-SA)",
-    "Exercise illustrations by wger.de contributors (CC-BY-SA)",
+    "动作插画来自 Everkinetic 与 wger.de 社区 (CC-BY-SA)",
+    "Exercise illustrations by Everkinetic & wger.de contributors (CC-BY-SA)",
   ],
   weeklyVolume: ["每周容量", "Weekly volume"],
   thisWeekBar: ["本周", "this week"],
