@@ -7,6 +7,7 @@ import {
   HEAD,
   type MuscleRegion,
 } from "@/lib/musclePaths";
+import { useT } from "@/lib/i18n";
 
 const LIMB = "var(--color-elevated)";
 const OUTLINE = "var(--color-line)";
@@ -17,6 +18,7 @@ function Figure({
   cx,
   regions,
   label,
+  front,
   heat,
   selected,
   onPick,
@@ -24,6 +26,7 @@ function Figure({
   cx: number;
   regions: MuscleRegion[];
   label: string;
+  front: boolean;
   heat: (muscle: string) => string;
   selected?: string | null;
   onPick?: (muscle: string) => void;
@@ -32,6 +35,20 @@ function Figure({
     <g transform={`translate(${cx},4)`}>
       {/* silhouette (right half + mirror) */}
       <ellipse cx="0" cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} fill={LIMB} stroke={OUTLINE} strokeWidth="0.75" />
+      {/* a simple face on the FRONT figure only — an instant front-vs-back cue */}
+      {front ? (
+        <g>
+          <circle cx="-3.4" cy={HEAD.cy - 1} r="1.15" fill={OUTLINE} />
+          <circle cx="3.4" cy={HEAD.cy - 1} r="1.15" fill={OUTLINE} />
+          <path
+            d={`M-2.6 ${HEAD.cy + 4} Q0 ${HEAD.cy + 5.6} 2.6 ${HEAD.cy + 4}`}
+            fill="none"
+            stroke={OUTLINE}
+            strokeWidth="0.8"
+            strokeLinecap="round"
+          />
+        </g>
+      ) : null}
       {[1, -1].map((sx) => (
         <g key={sx} transform={`scale(${sx},1)`}>
           {SILHOUETTE_HALF.map((d, i) => (
@@ -67,10 +84,11 @@ function Figure({
         x="0"
         y="252"
         textAnchor="middle"
-        className="fill-faint"
-        fontSize="9"
+        className="fill-muted"
+        fontSize="12"
+        fontWeight="700"
         fontFamily="var(--font-mono)"
-        letterSpacing="2"
+        letterSpacing="3"
       >
         {label}
       </text>
@@ -92,6 +110,7 @@ export default function BodyHeatmap({
   onPick?: (muscle: string) => void;
   selected?: string | null;
 }) {
+  const t = useT();
   const vol = new Map(data.map((d) => [d.muscle, d.volume]));
   const max = Math.max(1, ...data.map((d) => d.volume));
   const heat = (muscle: string) => {
@@ -107,8 +126,8 @@ export default function BodyHeatmap({
 
   return (
     <svg viewBox="0 0 320 260" className="w-full" role="img" aria-label="Muscle load by body region">
-      <Figure cx={80} regions={FRONT_MUSCLES} label="FRONT" heat={heat} selected={selected} onPick={onPick} />
-      <Figure cx={240} regions={BACK_MUSCLES} label="BACK" heat={heat} selected={selected} onPick={onPick} />
+      <Figure cx={80} regions={FRONT_MUSCLES} label={t("bodyFront")} front heat={heat} selected={selected} onPick={onPick} />
+      <Figure cx={240} regions={BACK_MUSCLES} label={t("bodyBack")} front={false} heat={heat} selected={selected} onPick={onPick} />
       {/* heat legend */}
       <defs>
         <linearGradient id="bh-legend" x1="0" y1="1" x2="0" y2="0">

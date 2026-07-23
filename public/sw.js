@@ -3,7 +3,7 @@
    asset names. Data lives in IndexedDB, so the app is fully usable offline
    once the shell + chunks have been visited once. */
 
-const VERSION = "phm-v17";
+const VERSION = "phm-v18";
 const RUNTIME = `phm-runtime-${VERSION}`;
 
 self.addEventListener("install", () => {

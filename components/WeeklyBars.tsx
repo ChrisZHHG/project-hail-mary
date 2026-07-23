@@ -63,8 +63,12 @@ export default function WeeklyBars({
                   fill={isCurrent ? "#ff5e1a" : "#2ce6ff"}
                   opacity={isCurrent ? 0.9 : 0.55}
                 />
-              ) : null}
-              {w.total > 0 && (isCurrent || w.total === max) ? (
+              ) : (
+                // rest week (no strength training) — a faint baseline dot so the
+                // gap reads as "0", not as missing/broken data
+                <circle cx={x + bw / 2} cy={H - padB} r="1.6" fill="#8b96ad" opacity="0.35" />
+              )}
+              {w.total > 0 ? (
                 <text
                   x={x + bw / 2}
                   y={H - padB - h - 4}

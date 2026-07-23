@@ -156,6 +156,8 @@ const DICT = {
   peak: ["峰值", "peak"],
   watchBadge: ["手表", "watch"],
   muscleLoadAllTime: ["肌肉负荷 — 累计", "Muscle load — all time"],
+  bodyFront: ["正面", "FRONT"],
+  bodyBack: ["背面", "BACK"],
   noMuscleVol: ["还没有带重量的容量记录。", "No weighted volume logged yet."],
   logToStart: ["记一次训练，曲线就开始了。", "Log a session to start the trend."],
   noCompleted: ["还没有完成的训练。", "No completed sessions yet."],
@@ -163,6 +165,10 @@ const DICT = {
 
   // load gauge
   loadTitle: ["训练负荷 — 7天 vs 28天", "Training load — 7d vs 28d"],
+  loadWhat: [
+    "本周训练量 ÷ 近4周平均。≈1 稳定;>1.5 这周猛增(防伤病、重恢复);<0.8 偏少 / 在恢复。这是通用运动科学指标(急慢性负荷比),不是教练的理论。",
+    "This week's load ÷ your 4-week average. ≈1 steady · >1.5 ramping too fast (injury risk) · <0.8 tapering. A general sports-science metric (acute:chronic ratio), not the coach's method.",
+  ],
   estimate: ["估算", "estimate"],
   load7d: ["7 天负荷", "7-day load"],
   weeklyBaseline: ["周基线", "weekly baseline"],

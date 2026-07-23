@@ -28,10 +28,11 @@ export default function LoadGauge({ sessions }: { sessions: Session[] }) {
 
   return (
     <section className="panel p-4">
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-2 flex items-baseline justify-between">
         <h2 className="eyebrow">{t("loadTitle")}</h2>
         <span className="text-[0.6rem] uppercase tracking-wider text-faint">{t("estimate")}</span>
       </div>
+      <p className="mb-3 text-[0.7rem] leading-relaxed text-muted">{t("loadWhat")}</p>
 
       <div className="mb-3 flex items-baseline gap-4">
         <div>
