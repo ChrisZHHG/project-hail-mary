@@ -83,6 +83,20 @@ export default function FreestylePage() {
     [logs, sessionId]
   );
 
+  // Cards keep a stable, append-only slot for the whole session, so logging a
+  // set never reorders the list. (It used to fling the active card — and the
+  // scroll — to the top, because order was derived from the live setLog query.)
+  const [cardOrder, setCardOrder] = useState<string[]>([]);
+  useEffect(() => {
+    const logged = sessionLogs.map((l) => l.exerciseId).filter(Boolean) as string[];
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- append-only order must persist across renders
+    setCardOrder((prev) => {
+      const seen = new Set(prev);
+      const add = [...logged, ...active].filter((id) => !seen.has(id));
+      return add.length ? [...prev, ...add] : prev;
+    });
+  }, [sessionLogs, active]);
+
   // "Last time" memory, excluding the running session (so deltas are vs. history).
   const memory = useMemo(() => {
     if (!exercises || !wexs || !logs || !sessions) return undefined;
@@ -118,7 +132,12 @@ export default function FreestylePage() {
 
   // exercises already logged this session surface as active cards
   const loggedExIds = [...new Set(sessionLogs.map((l) => l.exerciseId).filter(Boolean))] as string[];
-  const activeIds = [...new Set([...loggedExIds, ...active])];
+  // Stable order (see cardOrder): keep each card in its original slot; show a
+  // just-picked exercise immediately (append) before the effect persists it.
+  const activeIds = [
+    ...cardOrder.filter((id) => loggedExIds.includes(id) || active.includes(id)),
+    ...active.filter((id) => !cardOrder.includes(id)),
+  ];
 
   async function finish() {
     if (!sessionId || doneSets === 0) return;
