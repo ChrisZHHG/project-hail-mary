@@ -49,7 +49,8 @@ export class HailMaryDB extends Dexie {
       readinessChecks: "id, date, timestamp",
     });
 
-    /* v2 — program sync (coach's June 2026 update: RIR 0-1, FB1 layout change)
+    /* v2 — program sync (June 2026: RIR recorded as 0-1, FB1 layout change —
+     * ⚠️ the 0-1 was wrong, see v11; kept here as history, not as truth)
      * + Apple Watch history backfill. Schema keypaths are unchanged; the
      * version bump exists to run this one-shot upgrade on installed clients. */
     this.version(2)
@@ -166,6 +167,17 @@ export class HailMaryDB extends Dexie {
               delete s.importedVolumeKg;
             }
           });
+      });
+
+    /* v11 — correct the program against the coach's own sheet ("Chris (Block 1)").
+     * v2 had recorded RIR as 0-1 everywhere (squat 1-2) and FB1 lateral raise as
+     * 1 set; the sheet prescribes RIR 1-2 (FB2 flat "2"), squat RIR 3, and FB1
+     * lateral raise 2 sets. Field-only fix: assignment ids are unchanged, so this
+     * bulkPut rewrites targets without touching a single setLog. */
+    this.version(11)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table("workoutExercises").bulkPut(SEED_WORKOUT_EXERCISES);
       });
 
     this.on("populate", () => this.seed());

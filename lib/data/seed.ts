@@ -261,9 +261,15 @@ type Assign = {
  * the layout changes; bump the DB version and extend that remap if you must
  * restructure again.
  *
- * Program v2 (June 2026, coach's updated sheet): RIR tightened to 0-1
- * (squat 1-2), FB1 drops Tricep Extension and runs 1 set of lateral raises,
- * FB3 leg extension/curl get "OR Isometric" alternatives with form videos. */
+ * Program v3 (Aug 2026) — re-verified line-by-line against the coach's own
+ * sheet, "Chris (Block 1)". v2 had wrongly recorded RIR as 0-1 across the board
+ * (squat 1-2) and FB1 lateral raise as 1 set. The sheet actually prescribes
+ * RIR 1-2 — FB2 written as a flat "2" — with squat at RIR 3, and FB1 lateral
+ * raise at 2 sets. Chris's recollection ("leave one or two in the tank")
+ * matches the sheet, so the sheet is the source of truth. Never train to
+ * failure here: the low dose + reps in reserve is what makes 3×/week possible.
+ * FB1 drops Tricep Extension; FB3 leg extension/curl keep the "OR Isometric"
+ * alternatives with form videos. */
 const DAYS: { id: string; name: string; subtitle: string; items: Assign[] }[] = [
   {
     id: "wo-fb1",
@@ -272,15 +278,15 @@ const DAYS: { id: string; name: string; subtitle: string; items: Assign[] }[] = 
     items: [
       { code: "cars", section: "warmup", sets: 1, reps: "4-8" },
       { code: "antTilt", section: "warmup", sets: 1, reps: "—" },
-      { code: "pulldown", section: "main", sets: 2, reps: "3-8", rir: "0-1" },
-      { code: "row", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "press", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "preacher", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "squat", section: "main", sets: 2, reps: "4-8", rir: "1-2" },
-      { code: "legCurl", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "toePress", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "latRaise", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "cableCrunch", section: "main", sets: 1, reps: "5-10", rir: "0-1", optional: true },
+      { code: "pulldown", section: "main", sets: 2, reps: "3-8", rir: "1-2" },
+      { code: "row", section: "main", sets: 1, reps: "4-8", rir: "1-2" },
+      { code: "press", section: "main", sets: 2, reps: "4-8", rir: "1-2" },
+      { code: "preacher", section: "main", sets: 2, reps: "4-8", rir: "1-2" },
+      { code: "squat", section: "main", sets: 2, reps: "4-8", rir: "3" },
+      { code: "legCurl", section: "main", sets: 1, reps: "4-8", rir: "1-2" },
+      { code: "toePress", section: "main", sets: 1, reps: "4-8", rir: "1-2" },
+      { code: "latRaise", section: "main", sets: 2, reps: "4-8", rir: "1-2" },
+      { code: "cableCrunch", section: "main", sets: 1, reps: "5-10", rir: "1-2", optional: true },
       { code: "steps", section: "cardio", sets: 1, reps: "—" },
       { code: "bike", section: "cardio", sets: 1, reps: "—", cardioSpec: "Zone 2 Cardio" },
     ],
@@ -292,15 +298,15 @@ const DAYS: { id: string; name: string; subtitle: string; items: Assign[] }[] = 
     items: [
       { code: "cars", section: "warmup", sets: 1, reps: "4-8" },
       { code: "antTilt", section: "warmup", sets: 1, reps: "—" },
-      { code: "pulldown", section: "main", sets: 2, reps: "3-8", rir: "0-1" },
-      { code: "row", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "press", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "preacher", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "legExt", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "legCurl", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "toePress", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "latRaise", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "cableCrunch", section: "main", sets: 1, reps: "5-10", rir: "0-1", optional: true },
+      { code: "pulldown", section: "main", sets: 2, reps: "3-8", rir: "1-2" },
+      { code: "row", section: "main", sets: 1, reps: "4-8", rir: "1-2" },
+      { code: "press", section: "main", sets: 2, reps: "4-8", rir: "2" },
+      { code: "preacher", section: "main", sets: 2, reps: "4-8", rir: "2" },
+      { code: "legExt", section: "main", sets: 2, reps: "4-8", rir: "2" },
+      { code: "legCurl", section: "main", sets: 1, reps: "4-8", rir: "2" },
+      { code: "toePress", section: "main", sets: 1, reps: "4-8", rir: "2" },
+      { code: "latRaise", section: "main", sets: 2, reps: "4-8", rir: "2" },
+      { code: "cableCrunch", section: "main", sets: 1, reps: "5-10", rir: "2", optional: true },
     ],
   },
   {
@@ -310,17 +316,17 @@ const DAYS: { id: string; name: string; subtitle: string; items: Assign[] }[] = 
     items: [
       { code: "cars", section: "warmup", sets: 1, reps: "4-8" },
       { code: "antTilt", section: "warmup", sets: 1, reps: "—" },
-      { code: "pulldown", section: "main", sets: 2, reps: "3-8", rir: "0-1" },
-      { code: "row", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "press", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "preacher", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "legExt", section: "main", sets: 2, reps: "4-8", rir: "0-1", notes: "OR Isometric — see form video" },
-      { code: "legCurl", section: "main", sets: 1, reps: "4-8", rir: "0-1", notes: "OR Isometric — see form video" },
-      { code: "calfRaise", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
-      { code: "cableTri", section: "main", sets: 2, reps: "4-8", rir: "0-1" },
-      { code: "adductor", section: "main", sets: 1, reps: "4x4 bursts", rir: "0-1" },
-      { code: "cableCrunch", section: "main", sets: 1, reps: "5-10", rir: "0-1" },
-      { code: "saLatRaise", section: "main", sets: 1, reps: "4-8", rir: "0-1" },
+      { code: "pulldown", section: "main", sets: 2, reps: "3-8", rir: "1-2" },
+      { code: "row", section: "main", sets: 1, reps: "4-8", rir: "1-2" },
+      { code: "press", section: "main", sets: 2, reps: "4-8", rir: "1-2" },
+      { code: "preacher", section: "main", sets: 2, reps: "4-8", rir: "1-2" },
+      { code: "legExt", section: "main", sets: 2, reps: "4-8", rir: "1-2", notes: "OR Isometric — see form video" },
+      { code: "legCurl", section: "main", sets: 1, reps: "4-8", rir: "1-2", notes: "OR Isometric — see form video" },
+      { code: "calfRaise", section: "main", sets: 1, reps: "4-8", rir: "1-2" },
+      { code: "cableTri", section: "main", sets: 2, reps: "4-8", rir: "1-2" },
+      { code: "adductor", section: "main", sets: 1, reps: "4x4 bursts", rir: "1-2" },
+      { code: "cableCrunch", section: "main", sets: 1, reps: "5-10", rir: "1-2" },
+      { code: "saLatRaise", section: "main", sets: 1, reps: "4-8", rir: "1-2" },
       { code: "steps", section: "cardio", sets: 1, reps: "—" },
       { code: "bike", section: "cardio", sets: 1, reps: "—", cardioSpec: "Zone 2 Cardio" },
     ],

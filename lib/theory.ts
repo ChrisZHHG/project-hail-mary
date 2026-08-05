@@ -49,7 +49,7 @@ export const THEORY: TheoryItem[] = [
     category: "principle",
     tag: "RIR",
     title: "Leave reps in reserve",
-    body: "Stop shy of failure (the program's 0-1 RIR is close, but controlled). Spend less of the tank per set so you recover faster and can train the movement again sooner.",
+    body: "Stop shy of failure — the program asks for 1-2 reps left in the tank (squat 3). Spend less of the tank per set so you recover faster and can train the movement again sooner. Never grinding to failure is exactly what makes training the same movement 3× a week possible.",
     general: true,
   },
   {
