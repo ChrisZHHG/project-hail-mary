@@ -8,6 +8,7 @@ import {
   useLastSessionSetsForExercise,
   useWeeklyReadiness,
   usePlanOverrides,
+  usePublicationState,
 } from "@/lib/data/hooks";
 import { applyOverride, prescribe, topSet } from "@/lib/coach";
 import CoachTip from "./CoachTip";
@@ -78,6 +79,7 @@ export default function ExecutionCard({
   // The coach's edit reaches the client here — an override the client never
   // sees while training is an override that didn't happen.
   const overrides = usePlanOverrides();
+  const pub = usePublicationState(instance.workoutId);
   const rx = useMemo(
     () =>
       applyOverride(
@@ -91,10 +93,12 @@ export default function ExecutionCard({
           soreness: weekly?.soreMap?.[exercise.targetMuscle],
           step: BRAND.weightStep,
         }),
-        overrides?.find((o) => o.workoutExerciseId === instance.id),
+        // Only a *sent* draft reaches the client. A coach mid-review must not
+        // shift the numbers under someone already in the gym.
+        pub?.editsLive ? overrides?.find((o) => o.workoutExerciseId === instance.id) : undefined,
         logs
       ),
-    [instance, lastSets, exercise, weekly, overrides, logs]
+    [instance, lastSets, exercise, weekly, overrides, logs, pub]
   );
 
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});

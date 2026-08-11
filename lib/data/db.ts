@@ -5,6 +5,7 @@ import type {
   Program,
   ReadinessCheck,
   PlanOverride,
+  PlanPublication,
   Session,
   SetLog,
   Workout,
@@ -38,6 +39,7 @@ export class HailMaryDB extends Dexie {
   readinessChecks!: Table<ReadinessCheck, string>;
   exerciseGear!: Table<ExerciseGear, string>;
   planOverrides!: Table<PlanOverride, string>;
+  planPublications!: Table<PlanPublication, string>;
 
   constructor() {
     super("hailmary");
@@ -186,6 +188,10 @@ export class HailMaryDB extends Dexie {
      * table holds the coach's edits to that proposal. Pure addition: a new
      * store, no change to any existing table. */
     this.version(12).stores({ planOverrides: "workoutExerciseId" });
+
+    /* v13 — coach sign-off. A draft goes live when the coach sends it, or on
+     * its own 24h before the session is due. Pure addition. */
+    this.version(13).stores({ planPublications: "workoutId" });
 
     this.on("populate", () => this.seed());
   }

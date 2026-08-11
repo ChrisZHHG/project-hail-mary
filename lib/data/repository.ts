@@ -6,6 +6,7 @@ import type {
   ExerciseGear,
   ExerciseInstance,
   PlanOverride,
+  PlanPublication,
   Program,
   ReadinessCheck,
   Session,
@@ -112,6 +113,13 @@ export interface Repository {
   ): Promise<void>;
   clearPlanOverride(workoutExerciseId: string): Promise<void>;
 
+  /** The coach's sign-off for a day, if it has been sent. */
+  getPublication(workoutId: string): Promise<PlanPublication | undefined>;
+  getPublications(): Promise<PlanPublication[]>;
+  /** Send the draft to the client. `by` records whether a human or the deadline did it. */
+  publishPlan(workoutId: string, by: "coach" | "auto", note?: string): Promise<void>;
+  unpublishPlan(workoutId: string): Promise<void>;
+
   getGear(exerciseId: string): Promise<ExerciseGear | undefined>;
   /** Save setup values; empty values clears the row. Stamps updatedAt. */
   saveGear(exerciseId: string, values: Record<string, string>): Promise<void>;
@@ -133,6 +141,7 @@ export const ALL_TABLES = [
   "readinessChecks",
   "exerciseGear",
   "planOverrides",
+  "planPublications",
 ] as const;
 
 class DexieRepository implements Repository {
@@ -387,6 +396,22 @@ class DexieRepository implements Repository {
 
   async clearPlanOverride(workoutExerciseId: string) {
     await db.planOverrides.delete(workoutExerciseId);
+  }
+
+  getPublication(workoutId: string) {
+    return db.planPublications.get(workoutId);
+  }
+
+  getPublications() {
+    return db.planPublications.toArray();
+  }
+
+  async publishPlan(workoutId: string, by: "coach" | "auto", note?: string) {
+    await db.planPublications.put({ workoutId, publishedAt: Date.now(), by, note });
+  }
+
+  async unpublishPlan(workoutId: string) {
+    await db.planPublications.delete(workoutId);
   }
 
   getGear(exerciseId: string) {

@@ -3,9 +3,9 @@
 import { useState } from "react";
 import type { OverriddenPrescription } from "@/lib/coach";
 import { repo } from "@/lib/data/repository";
-import type { ExerciseInstance, PlanOverride } from "@/lib/data/types";
+import type { ExerciseInstance, PlanOverride, SetLog } from "@/lib/data/types";
 import { useT } from "@/lib/i18n";
-import { exerciseNames, useNameLang, useUnit, lbsToDisplay, displayToLbs } from "@/lib/prefs";
+import { exerciseNames, useNameLang, useUnit, useWeightFmt, lbsToDisplay, displayToLbs } from "@/lib/prefs";
 import CoachTip from "./CoachTip";
 
 const numInput =
@@ -22,14 +22,21 @@ export default function CoachRxRow({
   instance,
   rx,
   override,
+  trend = [],
+  stalled = 0,
 }: {
   instance: ExerciseInstance;
   rx: OverriddenPrescription;
   override?: PlanOverride;
+  /** Top set of each recent session, oldest → newest. */
+  trend?: SetLog[];
+  /** Consecutive recent sessions without improvement. */
+  stalled?: number;
 }) {
   const t = useT();
   const lang = useNameLang();
   const unit = useUnit();
+  const fw = useWeightFmt();
   const [open, setOpen] = useState(false);
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
@@ -81,6 +88,25 @@ export default function CoachRxRow({
           {instance.targetRir ? ` @${instance.targetRir}` : ""}
         </span>
       </div>
+
+      {/* The evidence the recommendation reasons from, before the recommendation. */}
+      {trend.length > 0 ? (
+        <p className="tnum mt-1 flex flex-wrap items-baseline gap-1 text-[0.68rem] text-faint">
+          <span className="eyebrow mr-0.5">{t("trendRecent")}</span>
+          {trend.map((s, i) => (
+            <span key={s.id} className={i === trend.length - 1 ? "text-muted" : ""}>
+              {s.weight != null ? fw(s.weight) : "BW"}
+              {s.reps != null ? `×${s.reps}` : ""}
+              {i < trend.length - 1 ? <span className="text-faint/50"> ›</span> : null}
+            </span>
+          ))}
+          {stalled >= 2 ? (
+            <span className="ml-1 rounded border border-warn/50 px-1 text-[0.6rem] font-semibold text-warn">
+              {t("trendStalled").replace("{n}", String(stalled))}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
 
       <CoachTip rx={rx} />
 

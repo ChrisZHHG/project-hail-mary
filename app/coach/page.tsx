@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { weekStart } from "@/lib/data/repository";
+import { repo, weekStart } from "@/lib/data/repository";
 import {
   useAllSessions,
   useAllSetLogs,
@@ -13,6 +13,7 @@ import {
   useNextWorkout,
   useRecommendedSession,
   useWeeklyVolume,
+  usePublicationState,
 } from "@/lib/data/hooks";
 import { EVIDENCE_MIN_SETS } from "@/lib/coach";
 import CoachRxRow from "@/components/CoachRxRow";
@@ -20,15 +21,20 @@ import { LEVEL_META } from "@/lib/data/readiness";
 import { summarizeLoad } from "@/lib/load";
 import { buildExerciseMemory } from "@/lib/lookup";
 import { fmtDayLong } from "@/lib/dates";
-import { useWeightFmt, useNameLang, exerciseNames } from "@/lib/prefs";
-import LoadGauge from "@/components/LoadGauge";
+import { useNameLang } from "@/lib/prefs";
 import { useT, useMuscleName } from "@/lib/i18n";
 
-/** Read-only coach dashboard — one client card (Chris) for now, structured so
- *  a client list can wrap it once accounts/sync exist. */
+/**
+ * The coach's working surface: how the client is doing, what the engine proposes
+ * for the next session, and one button to sign off and send it.
+ *
+ * Deliberately narrow. Everything here either informs that decision or is the
+ * decision — the training-load ratio and the program-vs-actual table were cut
+ * because neither changed what the coach would do next. Single client for now,
+ * structured so a client list can wrap it once accounts exist.
+ */
 export default function CoachPage() {
   const t = useT();
-  const fw = useWeightFmt();
   const lang = useNameLang();
   const muscleName = useMuscleName();
   const sessions = useAllSessions();
@@ -40,6 +46,7 @@ export default function CoachPage() {
   const sched = useNextWorkout();
   const recommended = useRecommendedSession(sched?.workoutId ?? undefined);
   const volume = useWeeklyVolume();
+  const pub = usePublicationState(sched?.workoutId ?? undefined);
 
   const memories = useMemo(() => {
     if (!exercises || !wexs || !logs || !sessions) return undefined;
@@ -72,35 +79,74 @@ export default function CoachPage() {
     flags.push(t("coachFlagSleep").replace("{h}", String(latestCheck.sleepHours)));
   }
 
-  const memByExercise = new Map(memories.map((m) => [m.exercise.id, m]));
-
   return (
     <div className="flex flex-col gap-5">
       <header className="pt-2">
-        <p className="eyebrow">{t("coachEyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">{t("coachClients")}</h1>
+        <p className="eyebrow">{t("coachViewLabel")}</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">Chris</h1>
       </header>
 
-      {/* Client card */}
-      <section className="panel border-l-2 border-cyan/50 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-ink">Chris</h2>
-            <p className="eyebrow mt-0.5">{t("coachProgramBlock")}</p>
+      {/* One status card: adherence, readiness and anything worth acting on.
+          Three separate panels for this was three glances where one would do. */}
+      <section
+        className={`panel border-l-2 p-4 ${flags.length ? "border-danger/60" : "border-cyan/50"}`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="eyebrow">{t("coachProgramBlock")}</p>
+            {latestCheck ? (
+              <p className={`mt-1 text-sm font-semibold ${LEVEL_META[latestCheck.level].color}`}>
+                {lang === "zh" ? LEVEL_META[latestCheck.level].labelZh : LEVEL_META[latestCheck.level].label}
+                <span className="tnum ml-2 text-[0.75rem] font-normal text-faint">
+                  {latestCheck.totalScore}/100 · {fmtDayLong(latestCheck.date, lang)}
+                </span>
+              </p>
+            ) : (
+              <p className="mt-1 text-[0.85rem] text-muted">{t("coachNoCheckin")}</p>
+            )}
           </div>
-          <div className="text-right">
+          <div className="shrink-0 text-right">
             <p className="tnum text-2xl font-bold text-cyan">
               {thisWeek.length}<span className="text-base text-faint">/3</span>
             </p>
             <p className="eyebrow">{t("coachSessionsWeek")}</p>
           </div>
         </div>
+
+        {flags.length ? (
+          <ul className="mt-3 flex flex-col gap-1 border-t border-line pt-2.5">
+            {flags.map((f, i) => (
+              <li key={i} className="text-[0.8rem] leading-snug text-danger">{f}</li>
+            ))}
+          </ul>
+        ) : null}
+
+        {latestCheck?.noteToCoach ? (
+          <blockquote className="mt-2.5 border-l-2 border-cyan/40 pl-3 text-[0.8rem] italic leading-snug text-muted">
+            “{latestCheck.noteToCoach}”
+          </blockquote>
+        ) : null}
       </section>
 
       {/* Engine-generated next session — the thing a coach reviews and sends. */}
       <section className="panel p-4">
         <div className="flex items-baseline justify-between gap-2">
-          <h2 className="eyebrow">{t("coachRxTitle")}</h2>
+          <h2 className="eyebrow">
+            {t("coachRxTitle")}
+            <span
+              className={`ml-2 rounded px-1.5 py-0.5 text-[0.6rem] normal-case ${
+                pub?.state === "draft"
+                  ? "border border-laser/50 text-laser"
+                  : "border border-go/50 text-go"
+              }`}
+            >
+              {pub?.state === "draft"
+                ? t("pubDraft")
+                : pub?.state === "auto"
+                  ? t("pubAuto")
+                  : t("pubPublished")}
+            </span>
+          </h2>
           {sched?.workoutId ? (
             <span className="text-[0.75rem] font-bold text-cyan">
               {workouts.find((w) => w.id === sched.workoutId)?.name}
@@ -111,13 +157,51 @@ export default function CoachPage() {
 
         {recommended?.length ? (
           <ul className="flex flex-col gap-2.5">
-            {recommended.map(({ instance, rx, override }) => (
-              <CoachRxRow key={instance.id} instance={instance} rx={rx} override={override} />
+            {recommended.map(({ instance, rx, override, trend, stalled }) => (
+              <CoachRxRow
+                key={instance.id}
+                instance={instance}
+                rx={rx}
+                override={override}
+                trend={trend}
+                stalled={stalled}
+              />
             ))}
           </ul>
         ) : (
           <p className="text-[0.85rem] text-muted">{t("coachRxNoPlan")}</p>
         )}
+
+        {/* The one action on this page: sign off and send. */}
+        {recommended?.length && sched?.workoutId ? (
+          <div className="mt-4 border-t border-line pt-3">
+            <button
+              type="button"
+              onClick={() => void repo.publishPlan(sched.workoutId!, "coach")}
+              className={`tap w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider transition active:scale-[0.98] ${
+                pub?.state === "draft"
+                  ? "bg-laser text-black glow-laser"
+                  : "border border-line text-muted hover:border-cyan/40 hover:text-cyan"
+              }`}
+            >
+              {pub?.state === "draft" ? t("pubSend") : t("pubResend")}
+            </button>
+            <p className="mt-2 text-center text-[0.65rem] leading-snug text-faint">
+              {pub?.state === "draft"
+                ? pub.hoursLeft != null
+                  ? pub.hoursLeft > 0
+                    ? t("pubAutoIn").replace("{n}", String(pub.hoursLeft))
+                    : t("pubAutoNow")
+                  : t("pubHint")
+                : pub?.publication
+                  ? t("pubSentAt").replace(
+                      "{d}",
+                      new Date(pub.publication.publishedAt).toLocaleString()
+                    )
+                  : t("pubAuto")}
+            </p>
+          </div>
+        ) : null}
       </section>
 
       {/* Weekly hard sets per muscle — the most evidence-backed variable. */}
@@ -162,112 +246,8 @@ export default function CoachPage() {
         </ul>
       </section>
 
-      {/* Red flags */}
-      <section className={`panel p-4 ${flags.length ? "border-danger/50" : ""}`}>
-        <h2 className="eyebrow mb-2">{flags.length ? t("coachNeedsAttention") : t("coachNoFlags")}</h2>
-        {flags.length ? (
-          <ul className="flex flex-col gap-2">
-            {flags.map((f, i) => (
-              <li key={i} className="text-[0.85rem] leading-snug text-danger">{f}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-[0.85rem] text-muted">{t("coachAllInRange")}</p>
-        )}
-      </section>
 
-      {/* Latest check-in */}
-      <section className="panel p-4">
-        <div className="mb-2 flex items-baseline justify-between">
-          <h2 className="eyebrow">{t("coachLatestCheckin")}</h2>
-          {latestCheck ? (
-            <span className="text-[0.65rem] text-faint">{fmtDayLong(latestCheck.date, lang)}</span>
-          ) : null}
-        </div>
-        {latestCheck ? (
-          <>
-            <div className="flex items-center gap-3">
-              <span className={`text-sm font-bold ${LEVEL_META[latestCheck.level].color}`}>
-                {lang === "zh" ? LEVEL_META[latestCheck.level].labelZh : LEVEL_META[latestCheck.level].label}
-              </span>
-              <span className="tnum text-xl font-bold text-ink">
-                {latestCheck.totalScore}<span className="text-sm text-faint">/100</span>
-              </span>
-              {latestCheck.sleepHours != null ? (
-                <span className="tnum ml-auto text-[0.8rem] text-muted">😴 {latestCheck.sleepHours}h</span>
-              ) : null}
-              {latestCheck.proteinTaken != null ? (
-                <span className="text-[0.8rem]">{latestCheck.proteinTaken ? "🥩 ✓" : "🥩 ✗"}</span>
-              ) : null}
-            </div>
-            {Object.keys(latestCheck.soreMap ?? {}).length ? (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {Object.entries(latestCheck.soreMap!).map(([area, v]) => (
-                  <span
-                    key={area}
-                    className={`rounded-full border px-2.5 py-1 text-[0.65rem] font-semibold tracking-wide ${
-                      v >= 7 ? "border-danger/60 text-danger" : v >= 4 ? "border-warn/60 text-warn" : "border-line text-muted"
-                    }`}
-                  >
-                    {muscleName(area)} <span className="tnum">{v}/10</span>
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            {latestCheck.noteToCoach ? (
-              <blockquote className="mt-3 border-l-2 border-cyan/40 pl-3 text-[0.85rem] italic leading-snug text-muted">
-                “{latestCheck.noteToCoach}”
-              </blockquote>
-            ) : null}
-          </>
-        ) : (
-          <p className="text-[0.85rem] text-muted">{t("coachNoCheckin")}</p>
-        )}
-      </section>
 
-      <LoadGauge sessions={sessions} />
-
-      {/* Program vs actual */}
-      <section className="panel p-4">
-        <h2 className="eyebrow mb-1">{t("coachProgramVsActual")}</h2>
-        <p className="mb-3 text-[0.7rem] text-faint">{t("coachProgramVsActualSub")}</p>
-        <div className="flex flex-col gap-4">
-          {workouts.map((wo) => (
-            <div key={wo.id}>
-              <p className="mb-1.5 text-[0.8rem] font-bold text-cyan">{wo.name}</p>
-              <ul className="flex flex-col divide-y divide-line">
-                {wexs
-                  .filter((we) => we.workoutId === wo.id && we.section === "main")
-                  .sort((a, b) => a.order - b.order)
-                  .map((we) => {
-                    const ex = exercises.find((e) => e.id === we.exerciseId);
-                    if (!ex) return null;
-                    const last = memByExercise.get(ex.id)?.last;
-                    return (
-                      <li key={we.id} className="flex items-baseline justify-between gap-2 py-1.5">
-                        <span className="min-w-0 truncate text-[0.8rem] text-ink">{exerciseNames(ex, lang).primary}</span>
-                        <span className="tnum shrink-0 text-right text-[0.7rem]">
-                          <span className="text-faint">
-                            {we.targetSets}×{we.targetRepsRange}
-                            {we.targetRir ? ` @${we.targetRir}` : ""}
-                          </span>
-                          {last ? (
-                            <span className="ml-2 text-cyan">
-                              {last.weight != null ? fw(last.weight) : t("bw")}
-                              {last.reps != null ? `×${last.reps}` : ""}
-                            </span>
-                          ) : (
-                            <span className="ml-2 text-faint">—</span>
-                          )}
-                        </span>
-                      </li>
-                    );
-                  })}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
 
       <Link
         href="/import"

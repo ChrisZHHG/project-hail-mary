@@ -153,6 +153,24 @@ export interface PlanOverride {
   updatedAt: number;
 }
 
+/**
+ * The coach's sign-off on one day's draft.
+ *
+ * A coach's edits stay private until they say "send" — otherwise the client's
+ * numbers shift under them while the coach is still mid-thought. But the client
+ * must never be blocked waiting on a coach who got busy, so an unsent draft
+ * goes live on its own 24h before the session is due (`AUTO_PUBLISH_LEAD_MS`).
+ * Publishing early is what buys the coach: the client sees it sooner.
+ */
+export interface PlanPublication {
+  workoutId: string;
+  publishedAt: number;
+  /** Who sent it — the coach, or the deadline. */
+  by: "coach" | "auto";
+  /** Optional message shown to the client with the session. */
+  note?: string;
+}
+
 export interface ExerciseGear {
   exerciseId: string;
   /** Free-form setup values keyed by canonical english key, e.g. { seat: "4", pulley: "3", grip: "wide" }. */

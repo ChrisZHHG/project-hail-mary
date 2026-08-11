@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { EVIDENCE_MIN_SETS, lastSessionSetsFor, weeklyMuscleVolume } from "@/lib/coach";
+import {
+  EVIDENCE_MIN_SETS,
+  lastSessionSetsFor,
+  recentTopSets,
+  weeklyMuscleVolume,
+} from "@/lib/coach";
 import type { Exercise, SetLog, WorkoutExercise } from "@/lib/data/types";
 
 const ex = (id: string, targetMuscle: string): Exercise => ({
@@ -104,6 +109,41 @@ describe("lastSessionSetsFor — history follows the movement, not the assignmen
     // Finished on the stack, so that's the lineage being progressed.
     expect(found).toHaveLength(1);
     expect(found[0].weight).toBe(165);
+  });
+});
+
+describe("recentTopSets — the evidence behind the number", () => {
+  const wexs = [we("we-fb1-2", "wo-fb1", "ex-press", 2)];
+
+  it("returns one top set per session, oldest first", () => {
+    const logs = [
+      log({ sessionId: "a", exerciseId: "ex-press", weight: 100, reps: 5 }),
+      log({ sessionId: "a", exerciseId: "ex-press", weight: 90, reps: 8 }),
+      log({ sessionId: "b", exerciseId: "ex-press", weight: 110, reps: 4 }),
+    ];
+    const series = recentTopSets({
+      exerciseId: "ex-press",
+      setLogs: logs,
+      workoutExercises: wexs,
+      sessionDates: new Map([["a", "2026-07-20"], ["b", "2026-07-23"]]),
+    });
+    expect(series.map((s) => s.weight)).toEqual([100, 110]);
+  });
+
+  it("keeps one loading lineage — a BW session must not read as a collapse", () => {
+    const logs = [
+      log({ sessionId: "a", exerciseId: "ex-press", weight: 120, reps: 15 }),
+      log({ sessionId: "b", exerciseId: "ex-press", reps: 6 }), // bodyweight
+    ];
+    const series = recentTopSets({
+      exerciseId: "ex-press",
+      setLogs: logs,
+      workoutExercises: wexs,
+      sessionDates: new Map([["a", "2026-07-20"], ["b", "2026-07-23"]]),
+    });
+    // Latest session was bodyweight, so the weighted session isn't in the line.
+    expect(series).toHaveLength(1);
+    expect(series[0].weight).toBeUndefined();
   });
 });
 

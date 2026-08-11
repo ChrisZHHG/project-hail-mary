@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { nextOccurrence } from "../ics";
 import {
   applyOverride,
+  coachEditsAreLive,
+  draftState,
+  hoursUntilAutoPublish,
   lastSessionSetsFor,
   nextWorkout,
+  recentTopSets,
+  stallLength,
   prescribe,
   topSet,
   weeklyMuscleVolume,
@@ -202,9 +208,19 @@ export function useRecommendedSession(workoutId?: string) {
         // The coach's edit wins over the engine — and says so.
         const override = overrideBy.get(instance.id);
         const mine = allLogs.filter((l) => l.workoutExerciseId === instance.id);
+        // The evidence behind the number: what the last few sessions did.
+        const trend = recentTopSets({
+          exerciseId: instance.exerciseId,
+          setLogs: allLogs,
+          workoutExercises: wexs,
+          sessionDates: dates,
+          limit: 5,
+        });
         return {
           instance,
           lastSets,
+          trend,
+          stalled: stallLength(trend),
           override,
           rx: applyOverride(computed, override, mine),
         };
@@ -235,6 +251,36 @@ export function useWeeklyVolume() {
 /** Live coach overrides on the engine's proposal. */
 export function usePlanOverrides() {
   return useReactiveQuery(() => repo.getPlanOverrides(), []);
+}
+
+/**
+ * Whether one day's draft has been sent, and when it releases itself if not.
+ *
+ * `scheduledAt` is computed on the client after mount — it depends on the local
+ * weekday, so deriving it during render would drift between the prerendered
+ * HTML and the browser.
+ */
+export function usePublicationState(workoutId?: string) {
+  const publication = useReactiveQuery(
+    () => (workoutId ? repo.getPublication(workoutId) : Promise.resolve(undefined)),
+    [workoutId]
+  );
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clock is client-only; avoids hydration drift
+    setNow(Date.now());
+  }, [workoutId]);
+
+  return useMemo(() => {
+    if (!workoutId || now == null) return undefined;
+    const input = { publication, scheduledAt: nextOccurrence(workoutId), now };
+    return {
+      publication,
+      state: draftState(input),
+      editsLive: coachEditsAreLive(input),
+      hoursLeft: hoursUntilAutoPublish(input),
+    };
+  }, [workoutId, publication, now]);
 }
 
 /* ---- gear ---- */

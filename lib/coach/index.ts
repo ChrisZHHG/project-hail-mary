@@ -3,5 +3,6 @@
 export * from "./history";
 export * from "./override";
 export * from "./progression";
+export * from "./publication";
 export * from "./schedule";
 export * from "./volume";

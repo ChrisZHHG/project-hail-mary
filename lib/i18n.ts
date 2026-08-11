@@ -363,6 +363,27 @@ const DICT = {
   rxReset: ["还原引擎建议", "Reset to engine"],
   rxSaveEdit: ["保存", "Save"],
   rxSets: ["组数", "Sets"],
+
+  // publish workflow
+  coachViewLabel: ["教练视图", "Coach view"],
+  pubDraft: ["草稿 · 未下发", "Draft · not sent"],
+  pubPublished: ["已下发", "Sent to client"],
+  pubAuto: ["已自动生效", "Auto-released"],
+  pubSend: ["下发给学员", "Send to client"],
+  pubResend: ["重新下发", "Send again"],
+  pubAutoIn: [
+    "{n} 小时后自动生效(训练前 24 小时)",
+    "Auto-releases in {n}h (24h before the session)",
+  ],
+  pubAutoNow: ["已到自动生效时间", "Past the auto-release time"],
+  pubHint: [
+    "改动先存为草稿;下发后学员才看到。忘了下发也不要紧——训练前 24 小时会自动生效。",
+    "Edits stay a draft until you send. Forget to, and it releases itself 24h before the session.",
+  ],
+  pubSentAt: ["{d} 下发", "Sent {d}"],
+  // trend
+  trendRecent: ["近期", "Recent"],
+  trendStalled: ["已连续 {n} 次没进步", "No progress for {n} sessions"],
 } as const;
 
 export type I18nKey = keyof typeof DICT;
