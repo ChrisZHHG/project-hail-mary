@@ -128,6 +128,31 @@ export interface ExerciseInstance extends WorkoutExercise {
   exercise: Exercise;
 }
 
+/**
+ * A coach's edit to what the engine proposed for one movement's next session.
+ *
+ * The engine computes; the coach decides. An override is the coach's verdict on
+ * a single line of the draft — different numbers, fewer sets, or skip it — and
+ * it always wins over the computed prescription.
+ *
+ * Deliberately scoped to the *next* session: once a set has been logged against
+ * the assignment after `updatedAt`, the override is spent and the engine takes
+ * over again. A standing override would quietly freeze that movement's
+ * progression, which is the opposite of what a coach means by "this week, do X".
+ */
+export interface PlanOverride {
+  /** The assignment being overridden — one live override per assignment. */
+  workoutExerciseId: string;
+  weight?: number;
+  reps?: number;
+  sets?: number;
+  /** Coach struck this movement from the next session. */
+  skip?: boolean;
+  /** Coach's note to the client, shown alongside the numbers. */
+  note?: string;
+  updatedAt: number;
+}
+
 export interface ExerciseGear {
   exerciseId: string;
   /** Free-form setup values keyed by canonical english key, e.g. { seat: "4", pulley: "3", grip: "wide" }. */

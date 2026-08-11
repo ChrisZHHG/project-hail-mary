@@ -13,25 +13,37 @@ import { repo, ALL_TABLES } from "./repository";
  * from — the row mapping here is exactly what auto-sync reuses.
  */
 
-// Upsert conflict targets. Every table is keyed (user_id, id) except gear.
+// Upsert conflict targets. Every table is keyed (user_id, id) except these,
+// which are keyed by the thing they annotate.
 const CONFLICT: Record<string, string> = {
   exerciseGear: "user_id,exerciseId",
+  planOverrides: "user_id,workoutExerciseId",
 };
 
-/** Push every local row to Supabase for the signed-in user. Returns row counts. */
+/**
+ * Push every local row to Supabase for the signed-in user. Returns row counts.
+ *
+ * One failing table no longer aborts the whole push. A table the cloud schema
+ * doesn't have yet (a new local table whose migration hasn't been run) used to
+ * take every other table down with it — so a schema lag looked like "none of my
+ * data is backed up". Each table is now independent, and the failures are
+ * reported together at the end.
+ */
 export async function pushToCloud(userId: string): Promise<Record<string, number>> {
   if (!supabase) throw new Error("cloud-not-configured");
   const tables = await repo.exportAll();
   const counts: Record<string, number> = {};
+  const failures: string[] = [];
   for (const [table, rows] of Object.entries(tables)) {
     if (!rows.length) continue;
     const stamped = rows.map((r) => ({ ...(r as Record<string, unknown>), user_id: userId }));
     const { error } = await supabase
       .from(table)
       .upsert(stamped, { onConflict: CONFLICT[table] ?? "user_id,id" });
-    if (error) throw new Error(`${table}: ${error.message}`);
-    counts[table] = rows.length;
+    if (error) failures.push(`${table}: ${error.message}`);
+    else counts[table] = rows.length;
   }
+  if (failures.length) throw new Error(failures.join(" · "));
   return counts;
 }
 
@@ -39,9 +51,15 @@ export async function pushToCloud(userId: string): Promise<Record<string, number
 export async function pullFromCloud(): Promise<Record<string, number>> {
   if (!supabase) throw new Error("cloud-not-configured");
   const tables: Record<string, unknown[]> = {};
+  const failures: string[] = [];
   for (const table of ALL_TABLES) {
     const { data, error } = await supabase.from(table).select("*");
-    if (error) throw new Error(`${table}: ${error.message}`);
+    if (error) {
+      // Same reasoning as push: a table the cloud doesn't have yet must not
+      // block the tables it does have from coming down.
+      failures.push(`${table}: ${error.message}`);
+      continue;
+    }
     // Strip the cloud-only columns so local rows stay pure Dexie shapes.
     tables[table] = (data ?? []).map((row) => {
       const rest = { ...(row as Record<string, unknown>) };
@@ -50,5 +68,7 @@ export async function pullFromCloud(): Promise<Record<string, number>> {
       return rest;
     });
   }
-  return repo.importAll(tables);
+  const counts = await repo.importAll(tables);
+  if (failures.length) throw new Error(failures.join(" · "));
+  return counts;
 }

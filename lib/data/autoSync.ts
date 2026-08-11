@@ -20,8 +20,12 @@ import { pushToCloud, pullFromCloud } from "./cloudSync";
  * wins by arrival. True per-row LWW on `updated_at` + deletes come next.
  */
 
-const CONFLICT: Record<string, string> = { exerciseGear: "user_id,exerciseId" };
-const pkOf = (t: string) => (t === "exerciseGear" ? "exerciseId" : "id");
+const CONFLICT: Record<string, string> = {
+  exerciseGear: "user_id,exerciseId",
+  planOverrides: "user_id,workoutExerciseId",
+};
+const pkOf = (t: string) =>
+  t === "exerciseGear" ? "exerciseId" : t === "planOverrides" ? "workoutExerciseId" : "id";
 
 let currentUserId: string | null = null;
 let started = false;

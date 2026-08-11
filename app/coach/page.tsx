@@ -15,7 +15,7 @@ import {
   useWeeklyVolume,
 } from "@/lib/data/hooks";
 import { EVIDENCE_MIN_SETS } from "@/lib/coach";
-import CoachTip from "@/components/CoachTip";
+import CoachRxRow from "@/components/CoachRxRow";
 import { LEVEL_META } from "@/lib/data/readiness";
 import { summarizeLoad } from "@/lib/load";
 import { buildExerciseMemory } from "@/lib/lookup";
@@ -111,19 +111,8 @@ export default function CoachPage() {
 
         {recommended?.length ? (
           <ul className="flex flex-col gap-2.5">
-            {recommended.map(({ instance, rx }) => (
-              <li key={instance.id} className="rounded-xl border border-line p-2.5">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="min-w-0 truncate text-[0.85rem] font-semibold text-ink">
-                    {exerciseNames(instance.exercise, lang).primary}
-                  </span>
-                  <span className="tnum shrink-0 text-[0.7rem] text-faint">
-                    {rx.sets || instance.targetSets}×{instance.targetRepsRange}
-                    {instance.targetRir ? ` @${instance.targetRir}` : ""}
-                  </span>
-                </div>
-                <CoachTip rx={rx} />
-              </li>
+            {recommended.map(({ instance, rx, override }) => (
+              <CoachRxRow key={instance.id} instance={instance} rx={rx} override={override} />
             ))}
           </ul>
         ) : (

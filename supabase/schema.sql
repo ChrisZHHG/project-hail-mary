@@ -173,3 +173,37 @@ begin
          for each row execute function public.touch_updated_at()', t);
   end loop;
 end $$;
+
+-- ---------- planOverrides (added Aug 2026 — coach edits to the engine's draft) ----------
+-- Run this block on an existing project; the DO block below re-applies RLS,
+-- grants and the trigger to it. Keyed by the assignment it overrides.
+create table if not exists public."planOverrides" (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  "workoutExerciseId" text not null,
+  weight double precision,
+  reps integer,
+  sets integer,
+  skip boolean,
+  note text,
+  "updatedAt" bigint not null,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, "workoutExerciseId")
+);
+
+do $$
+begin
+  execute 'alter table public."planOverrides" enable row level security';
+  execute 'drop policy if exists "own rows" on public."planOverrides"';
+  execute 'create policy "own rows" on public."planOverrides" for all to authenticated
+             using (user_id = auth.uid()) with check (user_id = auth.uid())';
+  execute 'grant select, insert, update, delete on public."planOverrides" to authenticated';
+  execute 'drop trigger if exists touch_updated_at on public."planOverrides"';
+  execute 'create trigger touch_updated_at before update on public."planOverrides"
+             for each row execute function public.touch_updated_at()';
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'planOverrides'
+  ) then
+    execute 'alter publication supabase_realtime add table public."planOverrides"';
+  end if;
+end $$;

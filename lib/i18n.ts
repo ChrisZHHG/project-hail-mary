@@ -349,6 +349,20 @@ const DICT = {
   coachVolDays: ["{n} 天前", "{n}d ago"],
   coachVolToday: ["今天", "today"],
   setsUnit: ["组", "sets"],
+
+  // coach override — the coach's edit to the engine's proposal
+  rxEdit: ["调整", "Adjust"],
+  rxEdited: ["教练已调整", "Coach adjusted"],
+  rxOverrideHint: [
+    "改动只作用于下一次训练;练完后引擎重新接管。",
+    "Applies to the next session only — the engine takes over again afterwards.",
+  ],
+  rxSkipMovement: ["本次跳过", "Skip this one"],
+  rxUnskip: ["恢复", "Put back"],
+  rxNotePlaceholder: ["给学员的话(可选)", "Note to the client (optional)"],
+  rxReset: ["还原引擎建议", "Reset to engine"],
+  rxSaveEdit: ["保存", "Save"],
+  rxSets: ["组数", "Sets"],
 } as const;
 
 export type I18nKey = keyof typeof DICT;

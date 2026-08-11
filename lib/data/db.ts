@@ -4,6 +4,7 @@ import type {
   ExerciseGear,
   Program,
   ReadinessCheck,
+  PlanOverride,
   Session,
   SetLog,
   Workout,
@@ -36,6 +37,7 @@ export class HailMaryDB extends Dexie {
   setLogs!: Table<SetLog, string>;
   readinessChecks!: Table<ReadinessCheck, string>;
   exerciseGear!: Table<ExerciseGear, string>;
+  planOverrides!: Table<PlanOverride, string>;
 
   constructor() {
     super("hailmary");
@@ -179,6 +181,11 @@ export class HailMaryDB extends Dexie {
       .upgrade(async (tx) => {
         await tx.table("workoutExercises").bulkPut(SEED_WORKOUT_EXERCISES);
       });
+
+    /* v12 — coach overrides. The engine proposes each session's numbers; this
+     * table holds the coach's edits to that proposal. Pure addition: a new
+     * store, no change to any existing table. */
+    this.version(12).stores({ planOverrides: "workoutExerciseId" });
 
     this.on("populate", () => this.seed());
   }

@@ -7,8 +7,9 @@ import {
   useLastEntry,
   useLastSessionSetsForExercise,
   useWeeklyReadiness,
+  usePlanOverrides,
 } from "@/lib/data/hooks";
-import { prescribe, topSet } from "@/lib/coach";
+import { applyOverride, prescribe, topSet } from "@/lib/coach";
 import CoachTip from "./CoachTip";
 import { BRAND } from "@/lib/brand";
 import Link from "next/link";
@@ -62,7 +63,9 @@ export default function ExecutionCard({
   const names = exerciseNames(exercise, lang);
   const fw = useWeightFmt();
   const mTag = tagKey ? t(tagKey) : null;
-  const logs = useSessionInstanceLogs(sessionId, instance.id) ?? [];
+  const sessionLogs = useSessionInstanceLogs(sessionId, instance.id);
+  // Stable identity: a fresh `?? []` each render would re-run every memo below.
+  const logs = useMemo(() => sessionLogs ?? [], [sessionLogs]);
 
   // Previous *session* entry for the "last time" hint + cold prefill.
   const lastEntry = useLastEntry(instance.id, sessionId ?? undefined);
@@ -72,19 +75,26 @@ export default function ExecutionCard({
   // and walk the load down every week.
   const lastSets = useLastSessionSetsForExercise(exercise.id, sessionId ?? undefined);
   const weekly = useWeeklyReadiness();
+  // The coach's edit reaches the client here — an override the client never
+  // sees while training is an override that didn't happen.
+  const overrides = usePlanOverrides();
   const rx = useMemo(
     () =>
-      prescribe({
-        targetSets: instance.targetSets,
-        targetRepsRange: instance.targetRepsRange,
-        targetRir: instance.targetRir,
-        last: topSet(lastSets ?? []),
-        isWeighted: exercise.isWeighted,
-        readiness: weekly?.level,
-        soreness: weekly?.soreMap?.[exercise.targetMuscle],
-        step: BRAND.weightStep,
-      }),
-    [instance, lastSets, exercise, weekly]
+      applyOverride(
+        prescribe({
+          targetSets: instance.targetSets,
+          targetRepsRange: instance.targetRepsRange,
+          targetRir: instance.targetRir,
+          last: topSet(lastSets ?? []),
+          isWeighted: exercise.isWeighted,
+          readiness: weekly?.level,
+          soreness: weekly?.soreMap?.[exercise.targetMuscle],
+          step: BRAND.weightStep,
+        }),
+        overrides?.find((o) => o.workoutExerciseId === instance.id),
+        logs
+      ),
+    [instance, lastSets, exercise, weekly, overrides, logs]
   );
 
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});

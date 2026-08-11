@@ -5,6 +5,7 @@ import type {
   Exercise,
   ExerciseGear,
   ExerciseInstance,
+  PlanOverride,
   Program,
   ReadinessCheck,
   Session,
@@ -102,6 +103,15 @@ export interface Repository {
   getWeeklyReadiness(): Promise<ReadinessCheck | undefined>;
 
   /* ---- per-exercise gear (machine setup memory) ---- */
+  /** Every live coach override, keyed by the assignment it edits. */
+  getPlanOverrides(): Promise<PlanOverride[]>;
+  /** Upsert the coach's edit for one assignment. Empty patch clears it. */
+  savePlanOverride(
+    workoutExerciseId: string,
+    patch: Omit<PlanOverride, "workoutExerciseId" | "updatedAt">
+  ): Promise<void>;
+  clearPlanOverride(workoutExerciseId: string): Promise<void>;
+
   getGear(exerciseId: string): Promise<ExerciseGear | undefined>;
   /** Save setup values; empty values clears the row. Stamps updatedAt. */
   saveGear(exerciseId: string, values: Record<string, string>): Promise<void>;
@@ -122,6 +132,7 @@ export const ALL_TABLES = [
   "setLogs",
   "readinessChecks",
   "exerciseGear",
+  "planOverrides",
 ] as const;
 
 class DexieRepository implements Repository {
@@ -353,6 +364,31 @@ class DexieRepository implements Repository {
   }
 
   /* ---- gear ---- */
+  getPlanOverrides() {
+    return db.planOverrides.toArray();
+  }
+
+  async savePlanOverride(
+    workoutExerciseId: string,
+    patch: Omit<PlanOverride, "workoutExerciseId" | "updatedAt">
+  ) {
+    const hasEdit =
+      patch.weight != null ||
+      patch.reps != null ||
+      patch.sets != null ||
+      patch.skip === true ||
+      !!patch.note?.trim();
+    if (!hasEdit) {
+      await db.planOverrides.delete(workoutExerciseId);
+      return;
+    }
+    await db.planOverrides.put({ ...patch, workoutExerciseId, updatedAt: Date.now() });
+  }
+
+  async clearPlanOverride(workoutExerciseId: string) {
+    await db.planOverrides.delete(workoutExerciseId);
+  }
+
   getGear(exerciseId: string) {
     return db.exerciseGear.get(exerciseId);
   }

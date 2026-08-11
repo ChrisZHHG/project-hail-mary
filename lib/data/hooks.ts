@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import {
+  applyOverride,
   lastSessionSetsFor,
   nextWorkout,
   prescribe,
@@ -172,10 +173,12 @@ export function useRecommendedSession(workoutId?: string) {
   const sessions = useReactiveQuery(() => repo.getAllSessions(), []);
   const wexs = useWorkoutExercises();
   const weekly = useWeeklyReadiness();
+  const overrides = usePlanOverrides();
 
   return useMemo(() => {
-    if (!instances || !allLogs || !sessions || !wexs) return undefined;
+    if (!instances || !allLogs || !sessions || !wexs || !overrides) return undefined;
     const dates = new Map(sessions.map((s) => [s.id, s.date]));
+    const overrideBy = new Map(overrides.map((o) => [o.workoutExerciseId, o]));
     return instances
       .filter((i) => i.section === "main")
       .map((instance) => {
@@ -187,21 +190,26 @@ export function useRecommendedSession(workoutId?: string) {
           workoutExercises: wexs,
           sessionDates: dates,
         });
+        const computed = prescribe({
+          targetSets: instance.targetSets,
+          targetRepsRange: instance.targetRepsRange,
+          targetRir: instance.targetRir,
+          last: topSet(lastSets),
+          isWeighted: instance.exercise.isWeighted,
+          readiness: weekly?.level,
+          soreness: weekly?.soreMap?.[instance.exercise.targetMuscle],
+        });
+        // The coach's edit wins over the engine — and says so.
+        const override = overrideBy.get(instance.id);
+        const mine = allLogs.filter((l) => l.workoutExerciseId === instance.id);
         return {
           instance,
           lastSets,
-          rx: prescribe({
-            targetSets: instance.targetSets,
-            targetRepsRange: instance.targetRepsRange,
-            targetRir: instance.targetRir,
-            last: topSet(lastSets),
-            isWeighted: instance.exercise.isWeighted,
-            readiness: weekly?.level,
-            soreness: weekly?.soreMap?.[instance.exercise.targetMuscle],
-          }),
+          override,
+          rx: applyOverride(computed, override, mine),
         };
       });
-  }, [instances, allLogs, sessions, wexs, weekly]);
+  }, [instances, allLogs, sessions, wexs, weekly, overrides]);
 }
 
 /** Weekly hard sets per muscle vs the block's plan and the evidence baseline. */
@@ -222,6 +230,11 @@ export function useWeeklyVolume() {
       today: today(),
     });
   }, [exercises, wexs, logs, sessions]);
+}
+
+/** Live coach overrides on the engine's proposal. */
+export function usePlanOverrides() {
+  return useReactiveQuery(() => repo.getPlanOverrides(), []);
 }
 
 /* ---- gear ---- */
