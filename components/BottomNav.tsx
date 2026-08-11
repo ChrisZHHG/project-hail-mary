@@ -57,6 +57,11 @@ const TABS: Tab[] = [
 export default function BottomNav() {
   const pathname = usePathname();
   const t = useT();
+
+  // Marketing pages are not the app — no tab bar, no in-app chrome. Checked
+  // after the hooks so the call order stays identical on every render.
+  if (pathname.startsWith("/for-coaches")) return null;
+
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-void/85 backdrop-blur-md"
