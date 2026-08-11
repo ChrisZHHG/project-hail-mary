@@ -16,9 +16,13 @@ export const BRAND = {
   name: "NextSet",
   /** Short name for the home-screen icon (<= 12 chars looks best). */
   shortName: "NextSet",
-  /** One-line positioning under the wordmark. True for both audiences: the
-   *  lifter knows what to load, the coach knows what their client will lift. */
+  /** What the product does. True for both audiences: the lifter knows what to
+   *  load, the coach knows what their client will lift. Short enough to sit in
+   *  a document title without being truncated. */
   tagline: "Know your next set",
+  /** What the product believes — carried over from the original working name.
+   *  The tagline sells the function; this is the reason the function exists. */
+  ethos: "Train with intention and attention",
   /** Longer description for the PWA manifest + SEO. */
   description:
     "NextSet writes each training session from what you actually lifted — the load, the reps, and the reason behind both. Built on a strength coach's method, with the thinking always one tap away.",

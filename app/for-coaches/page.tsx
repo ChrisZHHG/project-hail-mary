@@ -43,6 +43,9 @@ function Hero() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/mark.svg" alt="" className="h-10 w-10 rounded-xl" />
         <span className="eyebrow">{BRAND.name}</span>
+        <span className="text-[0.65rem] uppercase tracking-widest text-faint/60">
+          {BRAND.ethos}
+        </span>
       </div>
       <h1 className="text-[2.1rem] font-bold leading-[1.15] text-ink">
         Your programming, written for you.

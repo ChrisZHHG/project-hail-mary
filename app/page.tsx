@@ -77,7 +77,11 @@ export default function Home() {
         <img src="/icons/mark.svg" alt="" className="h-11 w-11 rounded-xl" />
         <div>
           <h1 className="text-2xl font-bold leading-none text-ink">{BRAND.name}</h1>
+          {/* Tagline says what it does; the ethos says why it does it that way. */}
           <p className="eyebrow mt-1">{BRAND.tagline}</p>
+          <p className="mt-0.5 text-[0.62rem] leading-none tracking-wide text-faint/70">
+            {BRAND.ethos}
+          </p>
         </div>
       </header>
 
