@@ -335,8 +335,8 @@ const DICT = {
   // coach view — recommended session + weekly volume
   coachRxTitle: ["推荐下次训练", "Recommended next session"],
   coachRxSub: [
-    "引擎根据上次的最好一组 + 本周状态算出;每条都可改。",
-    "Computed from each movement's best set last time plus this week's check-in. Every line is editable.",
+    "引擎根据上次的最好一组 + 本周状态算出,每条都附依据。",
+    "Computed from each movement's best set last time plus this week's check-in; every line shows its reason.",
   ],
   coachRxNoPlan: ["暂无可推荐的训练", "Nothing to recommend yet"],
   coachVolTitle: ["本周容量(每块肌肉的硬组数)", "Weekly volume — hard sets per muscle"],
