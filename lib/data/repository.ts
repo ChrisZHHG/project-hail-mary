@@ -85,6 +85,10 @@ export interface Repository {
   getSessionExerciseLogs(sessionId: string, exerciseId: string): Promise<SetLog[]>;
   /** Most recent completed entry for an exercise (for "last time" + prefill). */
   getLastEntry(workoutExerciseId: string, excludeSessionId?: string): Promise<SetLog | undefined>;
+  /** Every set from the most recent session that trained this assignment — the
+   *  group the coach engine picks a top set from (a back-off set is not a
+   *  benchmark). Empty when there's no history. */
+  getLastSessionSets(workoutExerciseId: string, excludeSessionId?: string): Promise<SetLog[]>;
   upsertSet(log: Omit<SetLog, "id" | "timestamp"> & { id?: string }): Promise<SetLog>;
   /** Patch a set in place — keeps its timestamp so history order stays stable. */
   updateSet(id: string, patch: Partial<Omit<SetLog, "id">>): Promise<void>;
@@ -151,6 +155,19 @@ class DexieRepository implements Repository {
     return entries.find(
       (e) => e.done && e.sessionId !== excludeSessionId && (e.weight != null || e.reps != null)
     );
+  }
+
+  async getLastSessionSets(workoutExerciseId: string, excludeSessionId?: string) {
+    const entries = await db.setLogs
+      .where("[workoutExerciseId+timestamp]")
+      .between([workoutExerciseId, Dexie.minKey], [workoutExerciseId, Dexie.maxKey])
+      .reverse()
+      .toArray();
+    const usable = entries.filter(
+      (e) => e.done && e.sessionId !== excludeSessionId && (e.weight != null || e.reps != null)
+    );
+    const sid = usable[0]?.sessionId;
+    return sid ? usable.filter((e) => e.sessionId === sid) : [];
   }
 
   getActiveSession(workoutId: string) {

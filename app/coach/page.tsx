@@ -10,7 +10,12 @@ import {
   useWorkoutExercises,
   useWorkouts,
   useLatestReadiness,
+  useNextWorkout,
+  useRecommendedSession,
+  useWeeklyVolume,
 } from "@/lib/data/hooks";
+import { EVIDENCE_MIN_SETS } from "@/lib/coach";
+import CoachTip from "@/components/CoachTip";
 import { LEVEL_META } from "@/lib/data/readiness";
 import { summarizeLoad } from "@/lib/load";
 import { buildExerciseMemory } from "@/lib/lookup";
@@ -32,6 +37,9 @@ export default function CoachPage() {
   const wexs = useWorkoutExercises();
   const workouts = useWorkouts();
   const latestCheck = useLatestReadiness();
+  const sched = useNextWorkout();
+  const recommended = useRecommendedSession(sched?.workoutId ?? undefined);
+  const volume = useWeeklyVolume();
 
   const memories = useMemo(() => {
     if (!exercises || !wexs || !logs || !sessions) return undefined;
@@ -87,6 +95,82 @@ export default function CoachPage() {
             <p className="eyebrow">{t("coachSessionsWeek")}</p>
           </div>
         </div>
+      </section>
+
+      {/* Engine-generated next session — the thing a coach reviews and sends. */}
+      <section className="panel p-4">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="eyebrow">{t("coachRxTitle")}</h2>
+          {sched?.workoutId ? (
+            <span className="text-[0.75rem] font-bold text-cyan">
+              {workouts.find((w) => w.id === sched.workoutId)?.name}
+            </span>
+          ) : null}
+        </div>
+        <p className="mb-3 mt-1 text-[0.7rem] leading-snug text-faint">{t("coachRxSub")}</p>
+
+        {recommended?.length ? (
+          <ul className="flex flex-col gap-2.5">
+            {recommended.map(({ instance, rx }) => (
+              <li key={instance.id} className="rounded-xl border border-line p-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="min-w-0 truncate text-[0.85rem] font-semibold text-ink">
+                    {exerciseNames(instance.exercise, lang).primary}
+                  </span>
+                  <span className="tnum shrink-0 text-[0.7rem] text-faint">
+                    {rx.sets || instance.targetSets}×{instance.targetRepsRange}
+                    {instance.targetRir ? ` @${instance.targetRir}` : ""}
+                  </span>
+                </div>
+                <CoachTip rx={rx} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[0.85rem] text-muted">{t("coachRxNoPlan")}</p>
+        )}
+      </section>
+
+      {/* Weekly hard sets per muscle — the most evidence-backed variable. */}
+      <section className="panel p-4">
+        <h2 className="eyebrow">{t("coachVolTitle")}</h2>
+        <p className="mb-3 mt-1 text-[0.7rem] leading-snug text-faint">
+          {t("coachVolSub").replace("{n}", String(EVIDENCE_MIN_SETS))}
+        </p>
+        <ul className="flex flex-col gap-1.5">
+          {(volume ?? []).map((v) => {
+            const pct = v.planned ? Math.min(100, (v.done / v.planned) * 100) : 0;
+            const when =
+              v.daysSinceTrained == null
+                ? t("coachVolNever")
+                : v.daysSinceTrained === 0
+                  ? t("coachVolToday")
+                  : t("coachVolDays").replace("{n}", String(v.daysSinceTrained));
+            return (
+              <li key={v.muscle}>
+                <div className="flex items-baseline justify-between gap-2 text-[0.75rem]">
+                  <span className="min-w-0 truncate text-ink">{muscleName(v.muscle)}</span>
+                  <span className="tnum shrink-0 text-faint">
+                    <span className={v.done >= v.planned && v.planned > 0 ? "text-go" : "text-cyan"}>
+                      {v.done}
+                    </span>
+                    /{v.planned} {t("setsUnit")}
+                    {v.underEvidence ? (
+                      <span className="ml-1.5 text-[0.6rem] text-faint/70">·{EVIDENCE_MIN_SETS}+</span>
+                    ) : null}
+                    <span className="ml-1.5 text-[0.65rem]">{when}</span>
+                  </span>
+                </div>
+                <div className="mt-1 h-1 overflow-hidden rounded-full bg-elevated">
+                  <div
+                    className={`h-full rounded-full ${v.done >= v.planned && v.planned > 0 ? "bg-go" : "bg-cyan"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       {/* Red flags */}

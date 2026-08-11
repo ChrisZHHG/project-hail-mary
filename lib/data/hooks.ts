@@ -1,7 +1,15 @@
 "use client";
 
+import { useMemo } from "react";
+import {
+  lastSessionSetsFor,
+  nextWorkout,
+  prescribe,
+  topSet,
+  weeklyMuscleVolume,
+} from "../coach";
 import { useReactiveQuery } from "./reactive";
-import { repo, today } from "./repository";
+import { repo, today, weekStart } from "./repository";
 
 /** Reactive reads — re-render automatically when the underlying tables change.
  *  Every hook is backed by the Repository; reactivity comes from
@@ -97,6 +105,28 @@ export function useLastEntry(workoutExerciseId: string, excludeSessionId?: strin
   );
 }
 
+/**
+ * Sets from the previous session that trained this *movement*, across every day
+ * of the block — the group the engine picks a top set from. Keyed by exercise,
+ * not assignment: the same movement carries a different `workoutExercise` id on
+ * each block day, and progression has to see all of them.
+ */
+export function useLastSessionSetsForExercise(exerciseId: string, excludeSessionId?: string) {
+  const logs = useAllSetLogs();
+  const wexs = useWorkoutExercises();
+  const sessions = useAllSessions();
+  return useMemo(() => {
+    if (!logs || !wexs || !sessions) return undefined;
+    return lastSessionSetsFor({
+      exerciseId,
+      setLogs: logs,
+      workoutExercises: wexs,
+      sessionDates: new Map(sessions.map((s) => [s.id, s.date])),
+      excludeSessionId,
+    });
+  }, [exerciseId, logs, wexs, sessions, excludeSessionId]);
+}
+
 /* ---- readiness ---- */
 
 export function useTodayReadiness() {
@@ -109,6 +139,89 @@ export function useWeeklyReadiness() {
 
 export function useLatestReadiness() {
   return useReactiveQuery(() => repo.getLatestReadiness(), []);
+}
+
+/* ---- coach engine ---- */
+
+/**
+ * Which block day is up, and whether enough recovery has passed to train it.
+ * Undefined until both queries land, so callers can show a loading state.
+ */
+export function useNextWorkout() {
+  const workouts = useReactiveQuery(() => repo.getAllWorkouts(), []);
+  const sessions = useReactiveQuery(() => repo.getCompletedSessions(), []);
+  return useMemo(
+    () =>
+      workouts && sessions
+        ? nextWorkout({ workouts, sessions, today: today() })
+        : undefined,
+    [workouts, sessions]
+  );
+}
+
+/**
+ * The engine's full call for the next session: every main movement with the
+ * numbers to hit and why. This is the artifact a coach reviews before sending.
+ */
+export function useRecommendedSession(workoutId?: string) {
+  const instances = useReactiveQuery(
+    () => (workoutId ? repo.getExerciseInstances(workoutId) : Promise.resolve([])),
+    [workoutId]
+  );
+  const allLogs = useAllSetLogs();
+  const sessions = useReactiveQuery(() => repo.getAllSessions(), []);
+  const wexs = useWorkoutExercises();
+  const weekly = useWeeklyReadiness();
+
+  return useMemo(() => {
+    if (!instances || !allLogs || !sessions || !wexs) return undefined;
+    const dates = new Map(sessions.map((s) => [s.id, s.date]));
+    return instances
+      .filter((i) => i.section === "main")
+      .map((instance) => {
+        // History follows the movement across all three block days, not this
+        // day's assignment id — otherwise FB2 can't see what FB1 lifted.
+        const lastSets = lastSessionSetsFor({
+          exerciseId: instance.exerciseId,
+          setLogs: allLogs,
+          workoutExercises: wexs,
+          sessionDates: dates,
+        });
+        return {
+          instance,
+          lastSets,
+          rx: prescribe({
+            targetSets: instance.targetSets,
+            targetRepsRange: instance.targetRepsRange,
+            targetRir: instance.targetRir,
+            last: topSet(lastSets),
+            isWeighted: instance.exercise.isWeighted,
+            readiness: weekly?.level,
+            soreness: weekly?.soreMap?.[instance.exercise.targetMuscle],
+          }),
+        };
+      });
+  }, [instances, allLogs, sessions, wexs, weekly]);
+}
+
+/** Weekly hard sets per muscle vs the block's plan and the evidence baseline. */
+export function useWeeklyVolume() {
+  const exercises = useExercises();
+  const wexs = useWorkoutExercises();
+  const logs = useAllSetLogs();
+  const sessions = useReactiveQuery(() => repo.getAllSessions(), []);
+
+  return useMemo(() => {
+    if (!exercises || !wexs || !logs || !sessions) return undefined;
+    return weeklyMuscleVolume({
+      exercises,
+      workoutExercises: wexs,
+      setLogs: logs,
+      sessionDates: new Map(sessions.map((s) => [s.id, s.date])),
+      weekStart: weekStart(),
+      today: today(),
+    });
+  }, [exercises, wexs, logs, sessions]);
 }
 
 /* ---- gear ---- */

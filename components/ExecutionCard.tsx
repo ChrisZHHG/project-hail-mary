@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { repo } from "@/lib/data/repository";
-import { useSessionInstanceLogs, useLastEntry } from "@/lib/data/hooks";
+import {
+  useSessionInstanceLogs,
+  useLastEntry,
+  useLastSessionSetsForExercise,
+  useWeeklyReadiness,
+} from "@/lib/data/hooks";
+import { prescribe, topSet } from "@/lib/coach";
+import CoachTip from "./CoachTip";
 import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { theoryForExercise } from "@/lib/theory";
@@ -60,6 +67,26 @@ export default function ExecutionCard({
   // Previous *session* entry for the "last time" hint + cold prefill.
   const lastEntry = useLastEntry(instance.id, sessionId ?? undefined);
 
+  // The coach engine's call for this movement. It benchmarks the previous
+  // session's *top* set — a fatigued back-off set would read as a regression
+  // and walk the load down every week.
+  const lastSets = useLastSessionSetsForExercise(exercise.id, sessionId ?? undefined);
+  const weekly = useWeeklyReadiness();
+  const rx = useMemo(
+    () =>
+      prescribe({
+        targetSets: instance.targetSets,
+        targetRepsRange: instance.targetRepsRange,
+        targetRir: instance.targetRir,
+        last: topSet(lastSets ?? []),
+        isWeighted: exercise.isWeighted,
+        readiness: weekly?.level,
+        soreness: weekly?.soreMap?.[exercise.targetMuscle],
+        step: BRAND.weightStep,
+      }),
+    [instance, lastSets, exercise, weekly]
+  );
+
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [editing, setEditing] = useState<Set<number>>(new Set());
   const [extra, setExtra] = useState(0);
@@ -80,12 +107,15 @@ export default function ExecutionCard({
     const sid = await ensureSession();
     // most recent done set in THIS session feeds the next set's prefill
     const sessionSource = logs.filter((l) => l.done).sort((a, b) => b.setNumber - a.setNumber)[0];
-    const src = sessionSource ?? lastEntry;
     const d = drafts[n] ?? {};
     const existing = logByNum.get(n);
-    const weight = showWeight ? (d.weight ?? src?.weight ?? 50) : undefined;
-    const reps = showReps ? (d.reps ?? src?.reps ?? lowRep) : undefined;
-    const rir = showRir ? (d.rir ?? src?.rir ?? targetRir) : undefined;
+    // The opening set follows the engine; later sets follow what was just done,
+    // so a back-off set tracks today's top set rather than the plan.
+    const weight = showWeight
+      ? (d.weight ?? sessionSource?.weight ?? rx.weight ?? lastEntry?.weight ?? 50)
+      : undefined;
+    const reps = showReps ? (d.reps ?? sessionSource?.reps ?? rx.reps ?? lowRep) : undefined;
+    const rir = showRir ? (d.rir ?? sessionSource?.rir ?? lastEntry?.rir ?? targetRir) : undefined;
     await repo.upsertSet({
       id: existing?.id,
       sessionId: sid,
@@ -113,6 +143,9 @@ export default function ExecutionCard({
 
   const sessionSource = logs.filter((l) => l.done).sort((a, b) => b.setNumber - a.setNumber)[0];
   const prefillSrc = sessionSource ?? lastEntry;
+  // Placeholders show the engine's numbers until a set lands this session.
+  const phWeight = sessionSource?.weight ?? rx.weight ?? lastEntry?.weight ?? 50;
+  const phReps = sessionSource?.reps ?? rx.reps ?? lowRep;
 
   return (
     <section className="panel p-4">
@@ -162,6 +195,7 @@ export default function ExecutionCard({
       ) : null}
 
       <Cue note={exercise.biomechanicNotes} link={exercise.link} />
+      {showWeight || showReps ? <CoachTip rx={rx} /> : null}
       <GearChips exerciseId={exercise.id} pattern={exercise.pattern} />
 
       <div className="mt-3 flex flex-col gap-2">
@@ -217,7 +251,7 @@ export default function ExecutionCard({
                 <WeightControl
                   label={t("weight")}
                   value={draft.weight}
-                  placeholder={prefillSrc?.weight ?? 50}
+                  placeholder={phWeight}
                   onChange={(v) => setDraft(n, { weight: v })}
                   step={BRAND.weightStep}
                 />
@@ -227,7 +261,7 @@ export default function ExecutionCard({
                   <Stepper
                     label={t("reps")}
                     value={draft.reps}
-                    placeholder={prefillSrc?.reps ?? lowRep}
+                    placeholder={phReps}
                     onChange={(v) => setDraft(n, { reps: v })}
                     step={1}
                     accent="cyan"

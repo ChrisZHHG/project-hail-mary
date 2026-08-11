@@ -7,6 +7,7 @@ import {
   useWeeklyReadiness,
   useCompletedSessions,
   useAllSetLogs,
+  useNextWorkout,
 } from "@/lib/data/hooks";
 import { isWeekend } from "@/lib/data/repository";
 import { LEVEL_META, REC_ZH, REC_ZH_JOINT } from "@/lib/data/readiness";
@@ -39,16 +40,14 @@ export default function Home() {
       ? sessionTonnageLbs(lastSession, allLogs.filter((l) => l.sessionId === lastSession.id))
       : 0;
 
-  // Rotation follows the last *program* session — watch imports (no workoutId,
-  // e.g. elliptical) must not reset the cycle to day 1.
-  const lastProgramSession = completed?.find((s) => s.workoutId);
-  const nextWorkout = useMemo(() => {
-    if (!workouts?.length) return undefined;
-    if (!lastProgramSession) return workouts[0];
-    const lastWo = workouts.find((w) => w.id === lastProgramSession.workoutId);
-    const nextOrder = lastWo ? (lastWo.dayOrder + 1) % workouts.length : 0;
-    return workouts.find((w) => w.dayOrder === nextOrder) ?? workouts[0];
-  }, [workouts, lastProgramSession]);
+  // The coach engine owns the rotation: it advances on program days only (a
+  // watch import must not reset the cycle) and knows whether enough recovery
+  // has passed — muscle is built on the rest day, not by stacking sessions.
+  const sched = useNextWorkout();
+  const nextWorkout = useMemo(
+    () => workouts?.find((w) => w.id === sched?.workoutId),
+    [workouts, sched]
+  );
 
   // Backup nudge: never exported, or stale > 14 days (computed post-mount).
   const [backupDue, setBackupDue] = useState<number | "never" | null>(null);
@@ -126,13 +125,37 @@ export default function Home() {
 
       {/* Primary start */}
       {nextWorkout ? (
-        <div className="relative overflow-hidden rounded-card border border-laser/40 bg-laser/[0.08] glow-laser">
+        <div
+          className={`relative overflow-hidden rounded-card border ${
+            sched?.dueToday === false
+              ? "border-line bg-elevated/40"
+              : "border-laser/40 bg-laser/[0.08] glow-laser"
+          }`}
+        >
           <Link href={`/session/${nextWorkout.id}`} className="block p-5 transition active:scale-[0.99]">
             <p className="eyebrow text-laser-soft">{t("upNext")}</p>
             <h2 className="mt-1 text-2xl font-bold text-ink">{nextWorkout.name}</h2>
             <p className="mt-0.5 text-sm text-muted">{nextWorkout.subtitle}</p>
-            <span className="mt-3 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-laser">
-              {t("startTraining")}
+            {/* Recovery verdict — the engine's reason, never just a number. */}
+            {sched ? (
+              <p
+                className={`mt-2 text-[0.78rem] leading-snug ${
+                  sched.dueToday ? "text-cyan" : "text-warn"
+                }`}
+              >
+                {sched.reasonCode === "resting"
+                  ? t("schedRestToday").replace("{n}", String(sched.daysSinceLast ?? 0))
+                  : sched.reasonCode === "firstSession"
+                    ? t("schedFirst")
+                    : t("schedDue")}
+              </p>
+            ) : null}
+            <span
+              className={`mt-3 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider ${
+                sched?.dueToday === false ? "text-muted" : "text-laser"
+              }`}
+            >
+              {sched?.dueToday === false ? t("startAnyway") : t("startTraining")}
             </span>
           </Link>
           <button

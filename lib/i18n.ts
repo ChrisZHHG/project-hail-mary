@@ -303,6 +303,52 @@ const DICT = {
   cloudPulled: ["已拉取 {n} 行 ✓", "Pulled {n} rows ✓"],
   cloudSyncing: ["同步中…", "Syncing…"],
   cloudError: ["同步失败:", "Sync failed: "],
+
+  // coach engine — recommendations and their reasons
+  rxLabel: ["建议", "Suggested"],
+  rxFirstTime: ["第一次做 — 从区间下限起步,留 1-2 个", "First time — start at the bottom of the range"],
+  rxTopOfRange: ["上次 {reps} 次到顶 — 加一档", "Hit {reps} last time — add a step"],
+  rxWellOverRange: [
+    "上次 {reps} 次,远超 {max} — 重量偏轻,直接上调",
+    "{reps} reps, well past {max} — the load was too light",
+  ],
+  rxInsideRange: ["上次 {reps} 次 — 同重量多做一次", "{reps} last time — same load, one more rep"],
+  rxBelowRange: ["上次只有 {reps} 次(低于 {min})— 减重", "Only {reps} (below {min}) — drop the load"],
+  rxOverreached: [
+    "上次 RIR {rir} 比目标 {target} 更狠 — 先不加,这套方法不练到力竭",
+    "RIR {rir} was harder than the {target} target — hold; this method never goes to failure",
+  ],
+  rxNoRepTarget: ["按计划执行", "Perform as written"],
+  rxReadinessHold: ["本周状态一般 — 保持重量,争取多一次", "Steady week — hold the load, chase the rep"],
+  rxReadinessBackOff: ["状态低迷 — 今天休息或改等长", "Low readiness — rest, or switch to the isometric"],
+  rxSoreSkip: ["该部位仍酸痛 {soreness}/10 — 今天跳过", "Still sore {soreness}/10 — skip it today"],
+  rxSkipToday: ["今天跳过", "Skip today"],
+  // schedule
+  schedRestToday: [
+    "距上次训练 {n} 天 — 肌肉在休息时才长,今天建议恢复",
+    "{n} day since you trained — muscle grows on rest days; take today easy",
+  ],
+  schedDue: ["已恢复 — 今天可以练", "Recovered — good to train today"],
+  schedFirst: ["从第一天开始", "Start at day one"],
+  startAnyway: ["仍要开始", "Start anyway"],
+
+  // coach view — recommended session + weekly volume
+  coachRxTitle: ["推荐下次训练", "Recommended next session"],
+  coachRxSub: [
+    "引擎根据上次的最好一组 + 本周状态算出;每条都可改。",
+    "Computed from each movement's best set last time plus this week's check-in. Every line is editable.",
+  ],
+  coachRxNoPlan: ["暂无可推荐的训练", "Nothing to recommend yet"],
+  coachVolTitle: ["本周容量(每块肌肉的硬组数)", "Weekly volume — hard sets per muscle"],
+  coachVolSub: [
+    "已完成 / 计划。灰字是文献参考值(每周 ≥{n} 组),仅供参考,不是计划要求。",
+    "Done / planned. Grey is the literature reference (≥{n} sets/week) — context, not a target.",
+  ],
+  coachVolUnderEvidence: ["低于文献参考", "below the literature reference"],
+  coachVolNever: ["从未训练", "never trained"],
+  coachVolDays: ["{n} 天前", "{n}d ago"],
+  coachVolToday: ["今天", "today"],
+  setsUnit: ["组", "sets"],
 } as const;
 
 export type I18nKey = keyof typeof DICT;

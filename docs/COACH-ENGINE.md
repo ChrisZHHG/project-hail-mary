@@ -68,8 +68,19 @@ the single most important design constraint of the engine.
   low volume depends on.
 - **R3 — Double progression inside the range.** Per exercise, versus last time:
   - hit the **top** of the range (e.g. 8) at target RIR → **+1 load step**, restart at the bottom of the range
+  - **well past** the top (≥2 reps over) → the load is mis-set, not merely light:
+    jump straight to the load that Epley says lands at the bottom of the range
+    (guarded at 1.5× against a mis-logged rep count). Replayed against Chris's
+    real history this reproduces his own corrections — 120×15 → **162.5** (he
+    went to 165) and 15×15 → **20** (exactly what he did).
   - **inside** the range → same load, **+1 rep**
-  - **below** the range (e.g. <4) → **−5-10% load**
+  - **below** the range (e.g. <4) → **−7.5% load**
+  - hit the top only by **digging past the prescribed RIR** → hold, don't reward
+    it; the method depends on stopping short of failure.
+- **R3b — One lineage per loading style.** Movements written as either/or
+  ("Band Assisted Pullups OR Lat Pulldown") share an exercise id but mix
+  bodyweight and stack sets. BW×6 says nothing about the pulldown stack, so
+  progression compares bodyweight with bodyweight and load with load.
 - **R4 — Autoregulate to readiness.** The weekly check-in scales the day:
   `go` → take the progression step · `steady` → hold load, chase the rep ·
   `caution` → drop to the minimum sets and stop 1 rep earlier ·
@@ -121,17 +132,24 @@ runnable *before* any UI exists.
 
 ---
 
-## 5. Build order (proposed)
+## 5. Build order
 
-1. **Rulebook constants** — Austin's block targets + progression steps in one
-   readable file he can audit.
-2. **`lib/coach/` pure functions + tests**, replayed over Chris's real logs.
-   Deliverable: a printed "what would the engine have told me each day in July"
-   report, to sanity-check before any UI.
-3. **"Today" surface** — the home page shows the due day, each exercise
-   pre-filled with the recommended numbers and its reason.
-4. **Coach review pass** — send Austin §1-2 and the replay from step 2.
-5. Only then: heatmap/status polish, deload handling, block editing.
+1. ~~Rulebook + `lib/coach/` pure functions + tests, replayed over real logs.~~
+   ✅ **Done (Aug 2026)** — `lib/coach/{progression,schedule}.ts`, 34 unit tests,
+   plus `tests/coach-replay.test.ts`:
+   ```
+   HM_BACKUP=~/Downloads/hailmary-backup-*.json HM_REPORT=/tmp/r.txt pnpm test replay
+   ```
+   Replaying 67 real session-to-session transitions, the engine's calls track
+   what Chris actually did, and are more conservative where they differ.
+2. **Coach review pass** — send Austin §1-2 + the replay output; settle §6.
+3. **"Today" surface** — home page shows the due day, each exercise pre-filled
+   with the recommended numbers and its reason.
+4. Only then: heatmap/status polish, deload handling, block editing.
+
+⚠️ The replay reads a *backup file*, so it reflects whatever program targets
+that export contained. Backups taken before the RIR fix still show `@RIR 0-1`;
+re-export from the app (v25+) to replay against the corrected 1-2.
 
 ---
 
