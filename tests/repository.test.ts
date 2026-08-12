@@ -48,6 +48,50 @@ describe("sessions", () => {
     expect(logs.filter((l) => l.id === set.id)).toHaveLength(1);
     expect(logs.find((l) => l.id === set.id)!.weight).toBe(110);
   });
+
+  it("upsertSet records the exercise even when only the assignment is passed", async () => {
+    // The program logger passes workoutExerciseId alone. If the exercise isn't
+    // captured here, deleting that assignment later detaches the set from its
+    // movement and its history silently disappears.
+    const s = await repo.startSession("wo-fb2");
+    const we = (await db.workoutExercises.where("workoutId").equals("wo-fb2").toArray())[0];
+    const set = await repo.upsertSet({
+      sessionId: s.id,
+      workoutExerciseId: we.id,
+      setNumber: 1,
+      weight: 100,
+      reps: 5,
+      done: true,
+    });
+    expect(set.exerciseId).toBe(we.exerciseId);
+    expect((await db.setLogs.get(set.id))!.exerciseId).toBe(we.exerciseId);
+  });
+
+  it("upsertSet does not overwrite an exercise the caller recorded itself", async () => {
+    const s = await repo.startFreestyleSession();
+    const we = (await db.workoutExercises.toArray())[0];
+    const set = await repo.upsertSet({
+      sessionId: s.id,
+      exerciseId: "ex-squat",
+      workoutExerciseId: we.id,
+      setNumber: 1,
+      weight: 100,
+      reps: 5,
+      done: true,
+    });
+    expect(set.exerciseId).toBe("ex-squat");
+  });
+});
+
+describe("the exercise-on-every-set invariant", () => {
+  it("holds for a freshly seeded database (populate skips the v14 upgrade)", async () => {
+    const logs = await db.setLogs.toArray();
+    const assigned = logs.filter((l) => l.workoutExerciseId);
+    expect(assigned.length).toBeGreaterThan(0);
+    for (const l of assigned) {
+      expect(l.exerciseId, `set ${l.id} has no exercise recorded`).toBeTruthy();
+    }
+  });
 });
 
 describe("saveReadiness", () => {

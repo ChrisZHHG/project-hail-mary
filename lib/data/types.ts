@@ -83,9 +83,13 @@ export interface SetLog {
   id: string;
   sessionId: string;
   /** Program assignment this set was logged against (in-app sets). Absent for
-   *  reconstructed/imported sets, which carry `exerciseId` directly instead. */
+   *  freestyle / reconstructed / imported sets. */
   workoutExerciseId?: string;
-  /** Direct exercise reference for sets with no program assignment. */
+  /** The movement performed — recorded at log time on *every* set since v14, not
+   *  only unassigned ones. This is the authoritative reference: the assignment
+   *  above is plan data that can be retargeted or deleted, and history must not
+   *  move when the plan does. Read both through `resolveExerciseId`, never
+   *  ad-hoc. Undefined only on pre-v14 rows whose assignment was already gone. */
   exerciseId?: string;
   setNumber: number;
   weight?: number;

@@ -258,8 +258,20 @@ class DexieRepository implements Repository {
   }
 
   async upsertSet(log: Omit<SetLog, "id" | "timestamp"> & { id?: string }) {
+    // Record the exercise as a fact, not just the assignment that prescribed it.
+    // The program logger passes `workoutExerciseId` alone, but an assignment is
+    // plan data a coach can later retarget or delete — and a set that never
+    // recorded its own movement becomes unattributable the moment that happens,
+    // silently taking its history with it. Done here rather than at the three
+    // call sites so they cannot drift apart.
+    const exerciseId =
+      log.exerciseId ??
+      (log.workoutExerciseId
+        ? (await db.workoutExercises.get(log.workoutExerciseId))?.exerciseId
+        : undefined);
     const record: SetLog = {
       ...log,
+      exerciseId,
       id: log.id ?? uid(),
       timestamp: Date.now(),
     };

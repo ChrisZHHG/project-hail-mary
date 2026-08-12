@@ -18,6 +18,8 @@ import {
   SEED_WORKOUT_EXERCISES,
   buildDemoHistory,
 } from "./seed";
+import { indexAssignments } from "./resolve";
+import { backfillExerciseId, tagLogsWithExercise } from "./migrations";
 import {
   WATCH_SESSIONS,
   WATCH_SESSION_LOGS,
@@ -193,6 +195,32 @@ export class HailMaryDB extends Dexie {
      * its own 24h before the session is due. Pure addition. */
     this.version(13).stores({ planPublications: "workoutId" });
 
+    /* v14 — record on every set which exercise it was performed on.
+     *
+     * Program sets stored only `workoutExerciseId`, a pointer into the plan.
+     * That was safe while the plan was hardcoded and uneditable; it stops being
+     * safe the moment a user can delete or retarget an assignment, because that
+     * pointer is the only thread holding a set to its movement. This recovers
+     * the fact for every existing set while the assignments explaining them are
+     * still intact — so it has to run before any program editing ships.
+     *
+     * No schema change: `exerciseId` is an existing optional field (v1) and is
+     * already in supabase/schema.sql, so synced rows need nothing. The logic is
+     * a tested pure function; see lib/data/migrations.ts. */
+    this.version(14)
+      .stores({})
+      .upgrade(async (tx) => {
+        const wexs = (await tx.table("workoutExercises").toArray()) as WorkoutExercise[];
+        const byAssignment = indexAssignments(wexs);
+        await tx
+          .table("setLogs")
+          .toCollection()
+          .modify((log: SetLog) => {
+            const recovered = backfillExerciseId(log, byAssignment);
+            if (recovered) log.exerciseId = recovered;
+          });
+      });
+
     this.on("populate", () => this.seed());
   }
 
@@ -209,12 +237,17 @@ export class HailMaryDB extends Dexie {
       JULY14_TOEPRESS_SESSION,
       JULY15_SESSION,
     ]);
-    await this.setLogs.bulkAdd([
+    // A fresh database is created at the latest version, so the v14 upgrade
+    // never runs on it — the seeded logs have to satisfy the same invariant on
+    // the way in, or new installs would be the one place it doesn't hold.
+    const logs = [
       ...demo.logs,
       ...WATCH_SESSION_LOGS,
       ...JULY14_TOEPRESS_LOGS,
       ...JULY15_LOGS,
-    ]);
+    ];
+    tagLogsWithExercise(logs, SEED_WORKOUT_EXERCISES);
+    await this.setLogs.bulkAdd(logs);
   }
 }
 
