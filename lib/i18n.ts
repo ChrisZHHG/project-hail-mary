@@ -184,6 +184,7 @@ const DICT = {
   volumePerSession: ["每次训练容量", "Volume per session"],
   historyTitle: ["历史记录", "History"],
   sessionNotFound: ["找不到这条训练记录。", "Session not found."],
+  workoutNotFound: ["这个训练日不在你的计划里。", "That workout isn't in your program."],
   noSetsInSession: ["这场还没有记录任何组。", "No sets logged in this session."],
   pickExercise: ["重选动作", "Pick movement"],
   editHint: ["点 ✎ 改重量/次数，或在下面补一组", "Tap ✎ to edit, or add a set below"],

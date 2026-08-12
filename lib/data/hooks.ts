@@ -36,8 +36,16 @@ export function useWorkouts(programId?: string) {
   );
 }
 
+/** A workout by id. `undefined` = still loading, `null` = no such workout.
+ *  The repo returns `undefined` for both, which is fine for a static route whose
+ *  ids were fixed at build time — but `/session/[workoutId]` now renders any id,
+ *  so a caller has to be able to tell "not loaded yet" from "doesn't exist" or a
+ *  bad id spins on the loading state forever. */
 export function useWorkout(workoutId: string) {
-  return useReactiveQuery(() => repo.getWorkout(workoutId), [workoutId]);
+  return useReactiveQuery(
+    async () => (await repo.getWorkout(workoutId)) ?? null,
+    [workoutId]
+  );
 }
 
 export function useExercises() {

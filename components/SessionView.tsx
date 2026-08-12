@@ -33,7 +33,6 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
   const instances = useExerciseInstances(workoutId);
   const logs = useSessionLogs(sessionId ?? undefined) ?? [];
   const session = useSession(sessionId ?? undefined);
-  const dayLabel = fmtDayLong(session?.date ?? today(), lang);
 
   // Resume an in-progress session that already has sets; do not create empty shells.
   useEffect(() => {
@@ -80,9 +79,28 @@ export default function SessionView({ workoutId }: { workoutId: string }) {
     router.push("/progress");
   }
 
+  /* A dead end, not a spinner. The route used to be prerendered from the seeded
+   * workout ids, so an unknown id was a hard 404; it now renders on demand, and
+   * without this the page would sit on "Calibrating…" forever. */
+  if (workout === null) {
+    return (
+      <div className="mt-10 flex flex-col items-center gap-3 text-center">
+        <p className="text-faint">{t("workoutNotFound")}</p>
+        <Link href="/train" className="text-sm uppercase tracking-wider text-cyan">
+          {t("chooseAnother")}
+        </Link>
+      </div>
+    );
+  }
+
   if (!workout || !instances || !ready) {
     return <p className="mt-10 text-center text-faint">{t("calibrating")}</p>;
   }
+
+  /* Below the guards on purpose: `today()` reads the clock, and this is the one
+   * place it was evaluated unconditionally during render — which on a server
+   * render means server time (UTC), not the lifter's. */
+  const dayLabel = fmtDayLong(session?.date ?? today(), lang);
 
   return (
     <div className="flex flex-col gap-4">

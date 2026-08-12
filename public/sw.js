@@ -3,12 +3,19 @@
    asset names. Data lives in IndexedDB, so the app is fully usable offline
    once the shell + chunks have been visited once. */
 
-/* ⚠️ Navigation responses are now server-rendered, not static files, and this
-   cache is keyed by URL with no `Vary` handling. That is safe only while the
-   rendered HTML is identical for every visitor — which holds today because auth
-   is entirely client-side (Supabase session lives in localStorage, see
-   lib/data/auth.ts). If server-side auth ever lands, the offline fallback below
-   would serve one user's shell to another: rework this handler first. */
+/* ⚠️ Navigation responses are server-rendered now, not static files, and this
+   cache is keyed by URL. That is safe only while the rendered HTML is identical
+   for every visitor. Today it is, for two independent reasons:
+     1. Every read goes through `useLiveQuery`, which no-ops during SSR
+        (dexie-react-hooks: `typeof window !== 'undefined' // Don't do this in
+        SSR`), so the server HTML is always the empty loading shell — it cannot
+        contain user data even in principle.
+     2. Auth is entirely client-side; the Supabase session lives in localStorage
+        (lib/data/auth.ts), so no cookie ever reaches the server.
+   Keep it that way: no route may call cookies()/headers()/draftMode(), and no
+   proxy.ts (Next 16's renamed middleware) may exist. If server-side auth ever
+   lands, the offline fallback below would serve one user's shell to another —
+   rework this handler first. */
 const VERSION = "phm-v33";
 const RUNTIME = `phm-runtime-${VERSION}`;
 
