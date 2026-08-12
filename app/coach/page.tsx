@@ -9,6 +9,7 @@ import {
   useExercises,
   useWorkoutExercises,
   useWorkouts,
+  useActiveWorkouts,
   useLatestReadiness,
   useNextWorkout,
   useRecommendedSession,
@@ -42,6 +43,9 @@ export default function CoachPage() {
   const exercises = useExercises();
   const wexs = useWorkoutExercises();
   const workouts = useWorkouts();
+  // The adherence denominator is how many days the current program has, not the
+  // 3 the seeded block happened to have.
+  const activeWorkouts = useActiveWorkouts();
   const latestCheck = useLatestReadiness();
   const sched = useNextWorkout();
   const recommended = useRecommendedSession(sched?.workoutId ?? undefined);
@@ -107,7 +111,8 @@ export default function CoachPage() {
           </div>
           <div className="shrink-0 text-right">
             <p className="tnum text-2xl font-bold text-cyan">
-              {thisWeek.length}<span className="text-base text-faint">/3</span>
+              {thisWeek.length}
+              <span className="text-base text-faint">/{activeWorkouts?.length ?? 0}</span>
             </p>
             <p className="eyebrow">{t("coachSessionsWeek")}</p>
           </div>

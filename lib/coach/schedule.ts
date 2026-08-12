@@ -48,15 +48,20 @@ export function nextWorkout(input: ScheduleInput): ScheduleResult {
     .filter((s) => s.completedAt != null)
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // Rotation advances on program days only...
-  const lastProgram = [...completed].reverse().find((s) => s.workoutId);
+  // Rotation advances on program days only — and only on days of *this*
+  // program. Without the membership check, a session from a since-retired
+  // program (or a deleted day) made `findIndex` return -1, and `(-1 + 1) % n`
+  // is 0, so the block silently restarted at day 1 instead of continuing. That
+  // read as a scheduling opinion rather than the accident it was.
+  const ids = new Set(workouts.map((w) => w.id));
+  const lastProgram = [...completed]
+    .reverse()
+    .find((s) => s.workoutId != null && ids.has(s.workoutId));
   // ...but recovery is spent by any training, freestyle included.
   const lastAny = completed[completed.length - 1];
 
-  const nextIdx = lastProgram
-    ? (workouts.findIndex((w) => w.id === lastProgram.workoutId) + 1) % workouts.length
-    : 0;
-  const workoutId = workouts[nextIdx]?.id ?? workouts[0].id;
+  const lastIdx = lastProgram ? workouts.findIndex((w) => w.id === lastProgram.workoutId) : -1;
+  const workoutId = workouts[(lastIdx + 1) % workouts.length].id;
 
   if (!lastAny) {
     return { workoutId, dueToday: true, reasonCode: "firstSession" };

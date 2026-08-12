@@ -44,7 +44,19 @@ const toDays = (iso: string) => {
 
 export interface VolumeInput {
   exercises: Exercise[];
+  /**
+   * **Every** assignment, including retired programs' — this resolves *logged*
+   * sets to muscles, so narrowing it would make sets logged under an old program
+   * unresolvable and silently drop them from the "done" count.
+   */
   workoutExercises: WorkoutExercise[];
+  /**
+   * The **active** program's assignments only — this is what the week is
+   * supposed to contain. Separate from the above because the two answer
+   * different questions; sharing one array was fine only while there could
+   * never be a second program.
+   */
+  plan: WorkoutExercise[];
   setLogs: SetLog[];
   /** sessionId → YYYY-MM-DD, so sets can be placed in a week. */
   sessionDates: Map<string, string>;
@@ -58,7 +70,7 @@ export interface VolumeInput {
  * Only completed sets count — a planned set that never happened isn't stimulus.
  */
 export function weeklyMuscleVolume(input: VolumeInput): MuscleVolume[] {
-  const { exercises, workoutExercises, setLogs, sessionDates, weekStart, today } = input;
+  const { exercises, workoutExercises, plan, setLogs, sessionDates, weekStart, today } = input;
   const exById = new Map(exercises.map((e) => [e.id, e]));
   const byAssignment = indexAssignments(workoutExercises);
 
@@ -81,7 +93,7 @@ export function weeklyMuscleVolume(input: VolumeInput): MuscleVolume[] {
 
   // What the block asks for in a full week, across every training day.
   const planned = new Map<string, number>();
-  for (const w of workoutExercises) {
+  for (const w of plan) {
     if (w.section !== "main") continue;
     const muscle = exById.get(w.exerciseId)?.targetMuscle;
     if (!muscle) continue;

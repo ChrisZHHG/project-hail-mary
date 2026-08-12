@@ -44,6 +44,15 @@ export const isWeekend = (d = new Date()) => d.getDay() === 0 || d.getDay() === 
 export interface Repository {
   /* ---- catalog / program (all-table reads back the reactive hooks) ---- */
   getPrograms(): Promise<Program[]>;
+  /** The program with the greatest `activatedAt` (newest `createdAt` breaks
+   *  ties), or undefined when there are no programs at all. */
+  getActiveProgram(): Promise<Program | undefined>;
+  /** Make a program the active one. */
+  setActiveProgram(programId: string): Promise<void>;
+  /** Days of the active program, in `dayOrder`. Empty when no program is active. */
+  getActiveWorkouts(): Promise<Workout[]>;
+  /** Assignments belonging to the active program — "what this week should contain". */
+  getActiveWorkoutExercises(): Promise<WorkoutExercise[]>;
   getWorkouts(programId: string): Promise<Workout[]>;
   /** Every workout, ordered by dayOrder (no program filter). */
   getAllWorkouts(): Promise<Workout[]>;
@@ -151,6 +160,33 @@ class DexieRepository implements Repository {
 
   getWorkouts(programId: string) {
     return db.workouts.where("programId").equals(programId).sortBy("dayOrder");
+  }
+
+  async getActiveProgram() {
+    const programs = await db.programs.toArray();
+    if (programs.length === 0) return undefined;
+    // Greatest activatedAt wins. createdAt breaks ties and covers programs that
+    // predate activation entirely — falling back to *a* program beats telling a
+    // lifter with a program that they have none.
+    return programs.sort(
+      (a, b) => (b.activatedAt ?? 0) - (a.activatedAt ?? 0) || b.createdAt - a.createdAt
+    )[0];
+  }
+
+  async setActiveProgram(programId: string) {
+    await db.programs.update(programId, { activatedAt: Date.now() });
+  }
+
+  async getActiveWorkouts() {
+    const active = await this.getActiveProgram();
+    return active ? this.getWorkouts(active.id) : [];
+  }
+
+  async getActiveWorkoutExercises() {
+    const workouts = await this.getActiveWorkouts();
+    const ids = new Set(workouts.map((w) => w.id));
+    const all = await db.workoutExercises.toArray();
+    return all.filter((w) => ids.has(w.workoutId));
   }
 
   getWorkout(workoutId: string) {

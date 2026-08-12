@@ -39,6 +39,10 @@ beforeAll(async () => {
   await legacy.open();
   expect(legacy.verno).toBe(13);
 
+  await legacy.table("programs").bulkAdd([
+    { id: "prog-fullbody", name: "Full Body Block", createdAt: 1_700_000_000_000 },
+    { id: "prog-older", name: "An earlier block", createdAt: 1_600_000_000_000 },
+  ]);
   await legacy.table("workouts").bulkAdd([
     { id: "wo-fb1", programId: "prog-fullbody", name: "Full Body 1", dayOrder: 0 },
     { id: "wo-fb2", programId: "prog-fullbody", name: "Full Body 2", dayOrder: 1 },
@@ -67,7 +71,7 @@ beforeAll(async () => {
 
 describe("upgrading an existing install", () => {
   it("upgrades rather than repopulating (the history survives)", async () => {
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     expect(await db.setLogs.count()).toBe(4);
   });
 
@@ -75,7 +79,11 @@ describe("upgrading an existing install", () => {
     // populate must not fire on an upgrade — an existing install acquiring a
     // second program would be a data bug that looks like a feature.
     expect(await db.workoutExercises.count()).toBe(3);
-    expect(await db.programs.count()).toBe(0);
+    expect(await db.programs.count()).toBe(2);
+    expect((await db.programs.toArray()).map((p) => p.id).sort()).toEqual([
+      "prog-fullbody",
+      "prog-older",
+    ]);
   });
 });
 
@@ -133,6 +141,40 @@ describe("v15 — the workout carries its own schedule and order", () => {
       .toArray();
     expect(viaIndex.map((w) => w.id)).toContain("we-wo-fb1-x");
     expect(viaIndex).toHaveLength(3);
+  });
+});
+
+describe("v16 — one program is the current one", () => {
+  it("stamps activation from createdAt, so the result is deterministic", async () => {
+    expect((await db.programs.get("prog-fullbody"))!.activatedAt).toBe(1_700_000_000_000);
+    expect((await db.programs.get("prog-older"))!.activatedAt).toBe(1_600_000_000_000);
+  });
+
+  it("makes the most recently created program the active one", async () => {
+    const { repo } = await import("@/lib/data/repository");
+    expect((await repo.getActiveProgram())!.id).toBe("prog-fullbody");
+  });
+
+  it("scopes the active program's workouts and assignments", async () => {
+    const { repo } = await import("@/lib/data/repository");
+    expect((await repo.getActiveWorkouts()).map((w) => w.id)).toEqual([
+      "wo-fb1",
+      "wo-fb2",
+      "wo-custom",
+    ]);
+    expect(await repo.getActiveWorkoutExercises()).toHaveLength(3);
+  });
+
+  it("switching program moves what counts as current", async () => {
+    const { repo } = await import("@/lib/data/repository");
+    await repo.setActiveProgram("prog-older");
+    expect((await repo.getActiveProgram())!.id).toBe("prog-older");
+    // prog-older owns no workouts, so the active view is empty rather than
+    // falling back to the other program's days.
+    expect(await repo.getActiveWorkouts()).toEqual([]);
+    expect(await repo.getActiveWorkoutExercises()).toEqual([]);
+
+    await repo.setActiveProgram("prog-fullbody"); // restore for any later test
   });
 });
 

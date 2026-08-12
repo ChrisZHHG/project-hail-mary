@@ -212,6 +212,31 @@ describe("nextWorkout — rotation and rest (R1/R2)", () => {
     expect(r.reasonCode).toBe("firstSession");
   });
 
+  it("ignores sessions from a program that isn't the current one", () => {
+    // A completed day belonging to a retired program (or one the user deleted)
+    // used to make findIndex return -1; (-1 + 1) % n is 0, so the rotation
+    // silently restarted at day 1 instead of carrying on — indistinguishable
+    // from a deliberate scheduling decision.
+    const r = nextWorkout({
+      workouts,
+      sessions: [
+        sess({ workoutId: "wo-fb1", date: "2026-07-18" }),
+        sess({ workoutId: "wo-from-an-old-block", date: "2026-07-20" }),
+      ],
+      today: "2026-07-23",
+    });
+    expect(r.workoutId).toBe("wo-fb2");
+  });
+
+  it("still starts at day 1 when no session belongs to this program", () => {
+    const r = nextWorkout({
+      workouts,
+      sessions: [sess({ workoutId: "wo-from-an-old-block", date: "2026-07-20" })],
+      today: "2026-07-23",
+    });
+    expect(r.workoutId).toBe("wo-fb1");
+  });
+
   it("advances to the next day in the rotation", () => {
     const sessions = [sess({ workoutId: "wo-fb1", date: "2026-07-21" })];
     const r = nextWorkout({ workouts, sessions, today: "2026-07-23" });

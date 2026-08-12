@@ -105,6 +105,7 @@ describe("every reader resolves a conflicted set the same way", () => {
     const volume = weeklyMuscleVolume({
       exercises,
       workoutExercises: wexs,
+      plan: wexs,
       setLogs: [conflicted],
       sessionDates: dates,
       weekStart: "2026-07-20",

@@ -45,6 +45,7 @@ create table if not exists public.programs (
   id text not null,
   name text not null,
   "createdAt" bigint not null,
+  "activatedAt" bigint,
   updated_at timestamptz not null default now(),
   primary key (user_id, id)
 );
@@ -195,6 +196,7 @@ create table if not exists public."planOverrides" (
 -- `create table if not exists` above is a no-op once a table exists, so columns
 -- added after the first run need their own ALTER.
 alter table public.workouts add column if not exists "scheduledDow" integer;
+alter table public.programs add column if not exists "activatedAt" bigint;
 
 -- ---------- planPublications (added Aug 2026 — the coach's sign-off) ----------
 -- ⚠️ This table was missing while the app already had it locally (Dexie v13) and

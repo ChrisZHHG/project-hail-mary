@@ -156,7 +156,10 @@ describe("weeklyMuscleVolume", () => {
   ];
   const base = {
     exercises,
+    // `workoutExercises` resolves logged sets; `plan` is what the week owes.
+    // Same array here — there is only one program in this fixture.
     workoutExercises: wexs,
+    plan: wexs,
     weekStart: "2026-07-20",
     today: "2026-07-23",
   };

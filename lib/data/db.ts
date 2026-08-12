@@ -251,13 +251,29 @@ export class HailMaryDB extends Dexie {
         if (changed.size) await weTable.bulkPut(wexs.filter((w) => changed.has(w.id)));
       });
 
+    /* v16 — programs can be switched between, so one of them has to be current.
+     *
+     * Stamped from `createdAt` rather than `Date.now()` so the result is
+     * deterministic and ordered: with several programs the most recently created
+     * becomes active, and re-running can't shuffle them. */
+    this.version(16)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx
+          .table("programs")
+          .toCollection()
+          .modify((p: Program) => {
+            if (p.activatedAt == null) p.activatedAt = p.createdAt;
+          });
+      });
+
     this.on("populate", () => this.seed());
   }
 
   private async seed() {
     const now = Date.now();
     await this.exercises.bulkAdd(SEED_EXERCISES);
-    await this.programs.bulkAdd([{ ...SEED_PROGRAM, createdAt: now }]);
+    await this.programs.bulkAdd([{ ...SEED_PROGRAM, createdAt: now, activatedAt: now }]);
     await this.workouts.bulkAdd(SEED_WORKOUTS);
     await this.workoutExercises.bulkAdd(SEED_WORKOUT_EXERCISES);
     const demo = buildDemoHistory(now);

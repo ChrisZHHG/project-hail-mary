@@ -56,6 +56,23 @@ export function useWorkoutExercises() {
   return useReactiveQuery(() => repo.getWorkoutExercises(), []);
 }
 
+/** The active program's days, in order. Distinct from `useWorkouts()`, which
+ *  deliberately still returns every workout — the progress page needs those to
+ *  put a name on sessions logged under a program that has since been retired. */
+export function useActiveWorkouts() {
+  return useReactiveQuery(() => repo.getActiveWorkouts(), []);
+}
+
+/** The active program's assignments — "what this week is supposed to contain". */
+export function useActiveWorkoutExercises() {
+  return useReactiveQuery(() => repo.getActiveWorkoutExercises(), []);
+}
+
+/** The program currently being trained. */
+export function useActiveProgram() {
+  return useReactiveQuery(() => repo.getActiveProgram(), []);
+}
+
 export function useExerciseInstances(workoutId: string) {
   return useReactiveQuery(() => repo.getExerciseInstances(workoutId), [workoutId]);
 }
@@ -163,7 +180,7 @@ export function useLatestReadiness() {
  * Undefined until both queries land, so callers can show a loading state.
  */
 export function useNextWorkout() {
-  const workouts = useReactiveQuery(() => repo.getAllWorkouts(), []);
+  const workouts = useReactiveQuery(() => repo.getActiveWorkouts(), []);
   const sessions = useReactiveQuery(() => repo.getCompletedSessions(), []);
   return useMemo(
     () =>
@@ -239,21 +256,26 @@ export function useRecommendedSession(workoutId?: string) {
 /** Weekly hard sets per muscle vs the block's plan and the evidence baseline. */
 export function useWeeklyVolume() {
   const exercises = useExercises();
+  // Two different questions, two different inputs: every assignment resolves
+  // *logged* sets to muscles (including retired programs', or those sets vanish
+  // from the count), while only the active program's says what the week owes.
   const wexs = useWorkoutExercises();
+  const plan = useActiveWorkoutExercises();
   const logs = useAllSetLogs();
   const sessions = useReactiveQuery(() => repo.getAllSessions(), []);
 
   return useMemo(() => {
-    if (!exercises || !wexs || !logs || !sessions) return undefined;
+    if (!exercises || !wexs || !plan || !logs || !sessions) return undefined;
     return weeklyMuscleVolume({
       exercises,
       workoutExercises: wexs,
+      plan,
       setLogs: logs,
       sessionDates: new Map(sessions.map((s) => [s.id, s.date])),
       weekStart: weekStart(),
       today: today(),
     });
-  }, [exercises, wexs, logs, sessions]);
+  }, [exercises, wexs, plan, logs, sessions]);
 }
 
 /** Live coach overrides on the engine's proposal. */

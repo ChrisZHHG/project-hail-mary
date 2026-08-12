@@ -29,6 +29,19 @@ export interface Program {
   id: string;
   name: string;
   createdAt: number;
+  /**
+   * When this program was last made the active one. The program with the
+   * greatest `activatedAt` is active; undefined means never activated.
+   *
+   * A timestamp rather than an `isActive` boolean on purpose: sync is
+   * last-write-wins per row, so two devices could each set a boolean true with
+   * no way to arbitrate, and "exactly one is true" is an invariant something has
+   * to enforce transactionally. A max has neither problem. It also isn't a
+   * preference in localStorage — that isn't in ALL_TABLES, so it wouldn't be
+   * backed up or synced, and each device would quietly disagree about which
+   * program the lifter is on.
+   */
+  activatedAt?: number;
 }
 
 export interface Workout {
