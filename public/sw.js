@@ -3,7 +3,13 @@
    asset names. Data lives in IndexedDB, so the app is fully usable offline
    once the shell + chunks have been visited once. */
 
-const VERSION = "phm-v32";
+/* ⚠️ Navigation responses are now server-rendered, not static files, and this
+   cache is keyed by URL with no `Vary` handling. That is safe only while the
+   rendered HTML is identical for every visitor — which holds today because auth
+   is entirely client-side (Supabase session lives in localStorage, see
+   lib/data/auth.ts). If server-side auth ever lands, the offline fallback below
+   would serve one user's shell to another: rework this handler first. */
+const VERSION = "phm-v33";
 const RUNTIME = `phm-runtime-${VERSION}`;
 
 self.addEventListener("install", () => {

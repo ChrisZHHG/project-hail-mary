@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
 
-/** 404 (App Router). In the static export this becomes 404.html. */
+/** 404 (App Router). Served by the Next server now that the static export
+ *  (which emitted this as a standalone 404.html) is gone. */
 export default function NotFound() {
   const t = useT();
   return (

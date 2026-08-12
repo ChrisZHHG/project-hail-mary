@@ -6,10 +6,17 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project Hail Mary — agent guide
 
-Offline-first strength-training logger **PWA**. Next.js 16 (App Router, static
-`output: export`) · React 19 · TypeScript · Tailwind v4 · Dexie/IndexedDB.
+Offline-first strength-training logger **PWA**. Next.js 16 (App Router, server
+build on Vercel) · React 19 · TypeScript · Tailwind v4 · Dexie/IndexedDB.
 **Local-first: all data lives on-device — the phone IS the database.** Deployed on
 Vercel → https://projecthalimary.vercel.app
+
+⚠️ `output: "export"` was **removed** (Aug 2026). It forced every dynamic route to
+be enumerated at build time, so `/session/[workoutId]` could only serve the three
+seeded workout ids — the blocker on user-authored programs. `/session/[workoutId]`
+is now the one server-rendered route; everything else still prerenders. The app
+remains 100% client-rendered below the shell — **nothing reads a request**, and
+that invariant is what keeps the service-worker HTML cache safe (see `public/sw.js`).
 
 > **Mission / the *why*:** see [`SOUL.md`](SOUL.md) — data-driven visible progress +
 > science-backed method (Austin's "frequency > load"), not ego lifting.
@@ -29,7 +36,7 @@ correctly; don't "fix" them.)
   pushing `main` alone does not deploy.
 - **BUMP `VERSION` in `public/sw.js` on EVERY deploy** meant to reach installed
   PWAs, or the service worker keeps serving the cached old app (it has no other
-  update signal). Currently `phm-v24`.
+  update signal). Currently `phm-v33`.
 - A stuck client can force-refresh in-app: 数据 · 备份 · 刷新 → 刷新应用.
 
 ## Architecture

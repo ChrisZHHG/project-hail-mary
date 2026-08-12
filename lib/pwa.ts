@@ -1,5 +1,12 @@
+"use client";
+
 /** PWA helpers — iOS standalone has no pull-to-refresh, so expose a manual
- *  hard refresh that drops the service worker + runtime caches then reloads. */
+ *  hard refresh that drops the service worker + runtime caches then reloads.
+ *
+ *  Marked client-only: every function here touches `navigator` / `window` /
+ *  `caches` unguarded. That was harmless under the old static export (there was
+ *  no server to import it), but the app now renders on a real server — so this
+ *  directive is what keeps it out of a server bundle. */
 
 export async function hardRefreshApp(): Promise<void> {
   if ("serviceWorker" in navigator) {
