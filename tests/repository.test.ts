@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import "fake-indexeddb/auto";
+import Dexie from "dexie";
 import type { SetLog } from "@/lib/data/types";
 
 // Dexie's module-level `db` singleton reads the global indexedDB, so
@@ -80,6 +81,50 @@ describe("sessions", () => {
       done: true,
     });
     expect(set.exerciseId).toBe("ex-squat");
+  });
+});
+
+describe("importAll — restore and cloud-pull are the unversioned door", () => {
+  it("tags a pre-v14 backup's sets on the way in", async () => {
+    // The realistic way the invariant gets undone: restoring a backup taken
+    // before the migration existed. It bypasses the Dexie upgrade chain
+    // entirely, so it has to enforce the same rules itself.
+    await repo.importAll({
+      workoutExercises: [
+        { id: "we-restored", workoutId: "wo-restored", exerciseId: "ex-press", order: 0, section: "main", targetSets: 2, targetRepsRange: "4-8" },
+      ],
+      setLogs: [
+        { id: "restored-1", sessionId: "s-restored", workoutExerciseId: "we-restored", setNumber: 1, weight: 100, reps: 5, done: true, timestamp: 1 },
+      ],
+    });
+    expect((await db.setLogs.get("restored-1"))!.exerciseId).toBe("ex-press");
+  });
+
+  it("normalizes an unindexable order from a restored backup", async () => {
+    await repo.importAll({
+      workoutExercises: [
+        { id: "we-ord-a", workoutId: "wo-ord", exerciseId: "ex-press", section: "main", targetSets: 1, targetRepsRange: "4-8" },
+        { id: "we-ord-b", workoutId: "wo-ord", exerciseId: "ex-press", order: "7", section: "main", targetSets: 1, targetRepsRange: "4-8" },
+      ] as unknown[],
+    });
+    const rows = await db.workoutExercises.where("workoutId").equals("wo-ord").toArray();
+    for (const r of rows) expect(typeof r.order).toBe("number");
+    // Both are reachable through the index the session screen actually reads.
+    const viaIndex = await db.workoutExercises
+      .where("[workoutId+order]")
+      .between(["wo-ord", Dexie.minKey], ["wo-ord", Dexie.maxKey])
+      .toArray();
+    expect(viaIndex).toHaveLength(2);
+  });
+
+  it("resolves a restored set against assignments already in the database", async () => {
+    const we = (await db.workoutExercises.where("workoutId").equals("wo-fb2").toArray())[0];
+    await repo.importAll({
+      setLogs: [
+        { id: "restored-2", sessionId: "s-restored", workoutExerciseId: we.id, setNumber: 1, weight: 90, reps: 5, done: true, timestamp: 2 },
+      ],
+    });
+    expect((await db.setLogs.get("restored-2"))!.exerciseId).toBe(we.exerciseId);
   });
 });
 

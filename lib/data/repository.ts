@@ -1,6 +1,7 @@
 import Dexie from "dexie";
 import { db } from "./db";
 import { scoreReadiness, type ReadinessExtras, type ReadinessInput } from "./readiness";
+import { normalizeAssignmentOrder, tagLogsWithExercise } from "./migrations";
 import type {
   Exercise,
   ExerciseGear,
@@ -490,6 +491,24 @@ class DexieRepository implements Repository {
   }
 
   async importAll(tables: Record<string, unknown[]>) {
+    /* Restore and cloud-pull are the *other* door into these tables, and unlike
+     * the Dexie upgrade chain they carry no version. A backup taken before v14
+     * or v15 — or a row written by a client still on an older build — would
+     * otherwise walk straight past the migrations and reintroduce exactly the
+     * states they removed: sets with no exercise recorded (whose history
+     * disappears the moment their assignment is deleted) and assignments with an
+     * `order` IndexedDB can't index (invisible in the session, but still
+     * counted in planned volume). Same functions the migrations use. */
+    const assignments = (tables.workoutExercises as WorkoutExercise[] | undefined) ?? [];
+    if (assignments.length) normalizeAssignmentOrder(assignments);
+
+    const logs = tables.setLogs as SetLog[] | undefined;
+    if (logs?.length) {
+      // Incoming assignments win over local ones of the same id.
+      const known = [...(await db.workoutExercises.toArray()), ...assignments];
+      tagLogsWithExercise(logs, known);
+    }
+
     const counts: Record<string, number> = {};
     for (const t of ALL_TABLES) {
       const rows = tables[t];
