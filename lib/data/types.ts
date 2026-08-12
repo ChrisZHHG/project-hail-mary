@@ -38,6 +38,10 @@ export interface Workout {
   dayOrder: number;
   /** e.g. "Tuesday" / "Saturday/Sunday". */
   subtitle?: string;
+  /** JS weekday this day is scheduled on (0 = Sunday). Drives the calendar
+   *  reminder and the 24h auto-publish deadline. Undefined = unscheduled, which
+   *  is a valid state: the rotation still advances, there's just no clock on it. */
+  scheduledDow?: number;
 }
 
 export interface WorkoutExercise {

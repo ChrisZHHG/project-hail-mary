@@ -61,7 +61,7 @@ export default function Home() {
   const [nextDayLabel, setNextDayLabel] = useState("");
   useEffect(() => {
     if (!nextWorkout) return;
-    const d = nextOccurrence(nextWorkout.id);
+    const d = nextOccurrence(nextWorkout.scheduledDow);
     if (!d) return;
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
       d.getDate()

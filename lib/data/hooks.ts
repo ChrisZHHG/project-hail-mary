@@ -273,6 +273,12 @@ export function usePublicationState(workoutId?: string) {
     () => (workoutId ? repo.getPublication(workoutId) : Promise.resolve(undefined)),
     [workoutId]
   );
+  // The auto-publish deadline comes off the workout's own scheduled weekday now,
+  // so it works for any program rather than only the three seeded days.
+  const workout = useReactiveQuery(
+    () => (workoutId ? repo.getWorkout(workoutId) : Promise.resolve(undefined)),
+    [workoutId]
+  );
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- clock is client-only; avoids hydration drift
@@ -281,14 +287,14 @@ export function usePublicationState(workoutId?: string) {
 
   return useMemo(() => {
     if (!workoutId || now == null) return undefined;
-    const input = { publication, scheduledAt: nextOccurrence(workoutId), now };
+    const input = { publication, scheduledAt: nextOccurrence(workout?.scheduledDow), now };
     return {
       publication,
       state: draftState(input),
       editsLive: coachEditsAreLive(input),
       hoursLeft: hoursUntilAutoPublish(input),
     };
-  }, [workoutId, publication, now]);
+  }, [workoutId, publication, workout, now]);
 }
 
 /* ---- gear ---- */

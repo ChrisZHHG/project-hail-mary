@@ -9,11 +9,14 @@ function onWeekday(from: Date, dow: number): Date {
   return d;
 }
 
-describe("nextOccurrence", () => {
-  it("returns null for an unknown workout id", () => expect(nextOccurrence("nope")).toBeNull());
+/** The weekday now comes off the workout row, not a table keyed by workout id. */
+const TUESDAY = 2;
 
-  it("wo-fb1 lands on a Tuesday at 17:00", () => {
-    const d = nextOccurrence("wo-fb1", new Date(2026, 5, 1, 9, 0));
+describe("nextOccurrence", () => {
+  it("returns null for an unscheduled workout", () => expect(nextOccurrence(undefined)).toBeNull());
+
+  it("a Tuesday workout lands on a Tuesday at 17:00", () => {
+    const d = nextOccurrence(TUESDAY, new Date(2026, 5, 1, 9, 0));
     expect(d).not.toBeNull();
     expect(d!.getDay()).toBe(2);
     expect(d!.getHours()).toBe(17);
@@ -21,7 +24,7 @@ describe("nextOccurrence", () => {
 
   it("still counts today when before the 17:00 start", () => {
     const tueMorning = onWeekday(new Date(2026, 5, 1, 10, 0), 2); // a Tuesday, 10:00
-    const d = nextOccurrence("wo-fb1", tueMorning)!;
+    const d = nextOccurrence(TUESDAY, tueMorning)!;
     expect(d.getDate()).toBe(tueMorning.getDate()); // same day
     expect(d.getHours()).toBe(17);
     expect(d.getTime()).toBeGreaterThan(tueMorning.getTime());
@@ -29,7 +32,7 @@ describe("nextOccurrence", () => {
 
   it("does NOT schedule in the past: at/after 17:00 on the day → next week", () => {
     const tueEvening = onWeekday(new Date(2026, 5, 1, 18, 0), 2); // a Tuesday, 18:00
-    const d = nextOccurrence("wo-fb1", tueEvening)!;
+    const d = nextOccurrence(TUESDAY, tueEvening)!;
     expect(d.getDay()).toBe(2);
     expect(d.getTime()).toBeGreaterThan(tueEvening.getTime()); // in the future, not today-past
   });

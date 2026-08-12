@@ -35,6 +35,56 @@ export function backfillExerciseId(
   return exerciseIdByAssignment.get(log.workoutExerciseId);
 }
 
+/**
+ * Make `order` a usable number on every assignment, unique within its workout.
+ *
+ * Two IndexedDB facts turn a sloppy `order` into a silent bug once a user can
+ * author programs:
+ *
+ *  - A compound index skips any record where part of the key path is
+ *    `undefined`. An assignment saved without `order` is therefore absent from
+ *    `[workoutId+order]` — which is the *only* index `getExerciseInstances`
+ *    reads. The row exists, still counts toward planned volume, and simply never
+ *    appears in the session. No error anywhere.
+ *  - IDB key order is number < date < string < binary < array. One `order` that
+ *    arrived as `"3"` from an uncoerced form input sorts after every number,
+ *    pinning that movement to the end of its workout permanently.
+ *
+ * Duplicates are legal here (the index is `[workoutId+order]`, not unique), and
+ * ties break by primary key — which for the legacy positional ids is
+ * lexicographic, so `we-wo-fb1-10` would come before `we-wo-fb1-2`.
+ *
+ * Rewrites in place, preserving the order things currently appear in. Returns
+ * the ids it touched.
+ */
+export function normalizeAssignmentOrder(workoutExercises: WorkoutExercise[]): string[] {
+  const byWorkout = new Map<string, WorkoutExercise[]>();
+  for (const w of workoutExercises) {
+    const group = byWorkout.get(w.workoutId);
+    if (group) group.push(w);
+    else byWorkout.set(w.workoutId, [w]);
+  }
+
+  const changed: string[] = [];
+  for (const group of byWorkout.values()) {
+    group
+      .map((w, i) => ({ w, i, key: Number(w.order) }))
+      .sort((a, b) => {
+        // Unusable orders sort last, keeping their relative position.
+        const av = Number.isFinite(a.key) ? a.key : Infinity;
+        const bv = Number.isFinite(b.key) ? b.key : Infinity;
+        return av - bv || a.i - b.i;
+      })
+      .forEach(({ w }, idx) => {
+        if (w.order !== idx) {
+          w.order = idx;
+          changed.push(w.id);
+        }
+      });
+  }
+  return changed;
+}
+
 export interface BackfillReport {
   /** Sets that gained an exerciseId recovered from their assignment. */
   stamped: number;

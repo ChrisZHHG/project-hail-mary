@@ -163,7 +163,15 @@ class DexieRepository implements Repository {
       .between([workoutId, Dexie.minKey], [workoutId, Dexie.maxKey])
       .toArray();
     const exercises = await db.exercises.bulkGet(assignments.map((a) => a.exerciseId));
-    return assignments.map((a, i) => ({ ...a, exercise: exercises[i]! }));
+    // `bulkGet` returns undefined for a key it can't find, so the old
+    // `exercises[i]!` was a lie: an assignment pointing at a deleted exercise
+    // produced `exercise: undefined`, and ExecutionCard reads `exercise.category`
+    // during render — a TypeError into the error boundary, taking the whole
+    // session with it. Skip the orphan instead; the row stays in the database.
+    return assignments.flatMap((a, i) => {
+      const exercise = exercises[i];
+      return exercise ? [{ ...a, exercise }] : [];
+    });
   }
 
   async getLastEntry(workoutExerciseId: string, excludeSessionId?: string) {

@@ -19,7 +19,7 @@ import {
   buildDemoHistory,
 } from "./seed";
 import { indexAssignments } from "./resolve";
-import { backfillExerciseId, tagLogsWithExercise } from "./migrations";
+import { backfillExerciseId, normalizeAssignmentOrder, tagLogsWithExercise } from "./migrations";
 import {
   WATCH_SESSIONS,
   WATCH_SESSION_LOGS,
@@ -219,6 +219,36 @@ export class HailMaryDB extends Dexie {
             const recovered = backfillExerciseId(log, byAssignment);
             if (recovered) log.exerciseId = recovered;
           });
+      });
+
+    /* v15 — a workout carries its own schedule, and `order` is trustworthy.
+     *
+     * `scheduledDow` replaces the lookup table in lib/ics.ts that was keyed by
+     * the three seeded workout ids. Any other workout had no weekday, which cost
+     * it the calendar reminder and — quietly — the 24h auto-publish deadline, so
+     * a draft the coach forgot to send would never release itself. Backfilled
+     * only where absent, so a renamed or re-scheduled day isn't clobbered.
+     *
+     * The `order` pass is preventative: nothing has written a bad one yet
+     * because nothing but the seed has ever written one at all. It runs here so
+     * the invariant is already true on the day the editor can break it. */
+    this.version(15)
+      .stores({})
+      .upgrade(async (tx) => {
+        const LEGACY_DOW: Record<string, number> = { "wo-fb1": 2, "wo-fb2": 4, "wo-fb3": 6 };
+        await tx
+          .table("workouts")
+          .toCollection()
+          .modify((w: Workout) => {
+            if (w.scheduledDow == null && LEGACY_DOW[w.id] != null) {
+              w.scheduledDow = LEGACY_DOW[w.id];
+            }
+          });
+
+        const weTable = tx.table("workoutExercises");
+        const wexs = (await weTable.toArray()) as WorkoutExercise[];
+        const changed = new Set(normalizeAssignmentOrder(wexs));
+        if (changed.size) await weTable.bulkPut(wexs.filter((w) => changed.has(w.id)));
       });
 
     this.on("populate", () => this.seed());

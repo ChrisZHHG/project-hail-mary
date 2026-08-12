@@ -270,11 +270,15 @@ type Assign = {
  * failure here: the low dose + reps in reserve is what makes 3×/week possible.
  * FB1 drops Tricep Extension; FB3 leg extension/curl keep the "OR Isometric"
  * alternatives with form videos. */
-const DAYS: { id: string; name: string; subtitle: string; items: Assign[] }[] = [
+/* `dow` is the JS weekday (0=Sun) the day is trained on — Tue/Thu/Sat. It used
+ * to live in a lookup table in lib/ics.ts keyed by these three ids, which meant
+ * no other workout could ever be scheduled. It belongs on the workout. */
+const DAYS: { id: string; name: string; subtitle: string; dow: number; items: Assign[] }[] = [
   {
     id: "wo-fb1",
     name: "Full Body 1",
     subtitle: "Tuesday",
+    dow: 2,
     items: [
       { code: "cars", section: "warmup", sets: 1, reps: "4-8" },
       { code: "antTilt", section: "warmup", sets: 1, reps: "—" },
@@ -295,6 +299,7 @@ const DAYS: { id: string; name: string; subtitle: string; items: Assign[] }[] = 
     id: "wo-fb2",
     name: "Full Body 2",
     subtitle: "Thursday",
+    dow: 4,
     items: [
       { code: "cars", section: "warmup", sets: 1, reps: "4-8" },
       { code: "antTilt", section: "warmup", sets: 1, reps: "—" },
@@ -313,6 +318,7 @@ const DAYS: { id: string; name: string; subtitle: string; items: Assign[] }[] = 
     id: "wo-fb3",
     name: "Full Body 3",
     subtitle: "Saturday / Sunday",
+    dow: 6,
     items: [
       { code: "cars", section: "warmup", sets: 1, reps: "4-8" },
       { code: "antTilt", section: "warmup", sets: 1, reps: "—" },
@@ -339,6 +345,7 @@ export const SEED_WORKOUTS: Workout[] = DAYS.map((d, i) => ({
   name: d.name,
   subtitle: d.subtitle,
   dayOrder: i,
+  scheduledDow: d.dow,
 }));
 
 export const SEED_WORKOUT_EXERCISES: WorkoutExercise[] = DAYS.flatMap((d) =>

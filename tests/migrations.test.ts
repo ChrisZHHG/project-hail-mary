@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { backfillExerciseId, tagLogsWithExercise } from "@/lib/data/migrations";
+import {
+  backfillExerciseId,
+  normalizeAssignmentOrder,
+  tagLogsWithExercise,
+} from "@/lib/data/migrations";
 import { indexAssignments } from "@/lib/data/resolve";
 import { lastSessionSetsFor, prescribe, topSet } from "@/lib/coach";
 import type { SetLog, WorkoutExercise } from "@/lib/data/types";
@@ -90,6 +94,57 @@ describe("tagLogsWithExercise", () => {
       log({ id: "c", sessionId: "s1", exerciseId: "ex-squat" }),
     ];
     expect(tagLogsWithExercise(logs, WEXS).unresolvable).toEqual([]);
+  });
+});
+
+describe("normalizeAssignmentOrder", () => {
+  const assign = (id: string, workoutId: string, order: unknown): WorkoutExercise =>
+    ({ id, workoutId, exerciseId: "ex-press", order, section: "main", targetSets: 1, targetRepsRange: "4-8" }) as unknown as WorkoutExercise;
+
+  it("compacts sparse orders while preserving how they read", () => {
+    const rows = [assign("a", "w1", 2), assign("b", "w1", 5), assign("c", "w1", 9)];
+    normalizeAssignmentOrder(rows);
+    expect(rows.map((r) => r.order)).toEqual([0, 1, 2]);
+  });
+
+  it("gives an unordered assignment a number, sorting it last", () => {
+    // Without this it has no [workoutId+order] index entry at all, so it never
+    // appears in the session even though it counts toward planned volume.
+    const rows = [assign("a", "w1", undefined), assign("b", "w1", 0)];
+    normalizeAssignmentOrder(rows);
+    expect(rows.find((r) => r.id === "b")!.order).toBe(0);
+    expect(rows.find((r) => r.id === "a")!.order).toBe(1);
+  });
+
+  it("coerces a string order instead of letting it sort after every number", () => {
+    const rows = [assign("a", "w1", "3"), assign("b", "w1", 7)];
+    normalizeAssignmentOrder(rows);
+    expect(rows.find((r) => r.id === "a")!.order).toBe(0);
+    expect(rows.find((r) => r.id === "b")!.order).toBe(1);
+  });
+
+  it("breaks duplicate orders deterministically, by position not by id", () => {
+    // Legacy ids tie-break lexicographically, which would put -10 before -2.
+    const rows = [assign("we-2", "w1", 1), assign("we-10", "w1", 1)];
+    normalizeAssignmentOrder(rows);
+    expect(rows.map((r) => [r.id, r.order])).toEqual([
+      ["we-2", 0],
+      ["we-10", 1],
+    ]);
+  });
+
+  it("scopes numbering per workout", () => {
+    const rows = [assign("a", "w1", 4), assign("b", "w2", 9), assign("c", "w1", 6)];
+    normalizeAssignmentOrder(rows);
+    expect(rows.find((r) => r.id === "a")!.order).toBe(0);
+    expect(rows.find((r) => r.id === "c")!.order).toBe(1);
+    expect(rows.find((r) => r.id === "b")!.order).toBe(0);
+  });
+
+  it("reports only what it changed, and is idempotent", () => {
+    const rows = [assign("a", "w1", 0), assign("b", "w1", 5)];
+    expect(normalizeAssignmentOrder(rows)).toEqual(["b"]);
+    expect(normalizeAssignmentOrder(rows)).toEqual([]);
   });
 });
 
