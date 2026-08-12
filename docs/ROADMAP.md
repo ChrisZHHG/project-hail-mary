@@ -10,8 +10,11 @@ support coach ↔ client (the "sell" path) — without losing the offline-first 
   days idle** — first load after a pause is slow / needs a manual resume. Fine
   for a workout app opened a few times a week; a 24/7 *sellable* product needs
   Pro (~$25/mo).
-- **Keep `output: export` (static).** The Supabase JS client runs fully in the
-  browser — no server needed, so the static-export PWA still works.
+- ~~**Keep `output: export` (static).**~~ **Reversed Aug 2026.** A static export
+  has to enumerate every dynamic route at build time, so `/session/[workoutId]`
+  could only ever serve the three seeded workout ids — which made user-authored
+  programs impossible. Now a normal Vercel server build. The app is still
+  client-rendered and offline-first; nothing reads a request.
 - **Stay local-first.** Dexie remains the offline cache; Supabase becomes the
   sync layer / source of truth. Offline keeps working.
 

@@ -23,9 +23,14 @@ import { pushToCloud, pullFromCloud } from "./cloudSync";
 const CONFLICT: Record<string, string> = {
   exerciseGear: "user_id,exerciseId",
   planOverrides: "user_id,workoutExerciseId",
+  planPublications: "user_id,workoutId",
 };
-const pkOf = (t: string) =>
-  t === "exerciseGear" ? "exerciseId" : t === "planOverrides" ? "workoutExerciseId" : "id";
+const PK: Record<string, string> = {
+  exerciseGear: "exerciseId",
+  planOverrides: "workoutExerciseId",
+  planPublications: "workoutId",
+};
+const pkOf = (t: string) => PK[t] ?? "id";
 
 let currentUserId: string | null = null;
 let started = false;
@@ -110,11 +115,21 @@ export async function startAutoSync(userId: string) {
   // Startup reconcile. Hooks stay gated off (started === false) so the pull's
   // writes don't echo back as pushes. Push local first so this device's edits
   // win, then pull remote-only changes.
+  //
+  // The two halves are caught separately on purpose. They used to share one
+  // `try`, and `pushToCloud` throws an aggregate at the end if any single table
+  // failed — so one unpushable table (planPublications had no cloud table at all)
+  // skipped the pull entirely, for good. A push that can't complete is a reason
+  // to pull harder, not a reason to stay stale.
   try {
     await pushToCloud(userId);
+  } catch (e) {
+    console.warn(`[autoSync] initial push failed: ${e instanceof Error ? e.message : e}`);
+  }
+  try {
     await pullFromCloud();
   } catch (e) {
-    console.warn(`[autoSync] initial reconcile failed: ${e instanceof Error ? e.message : e}`);
+    console.warn(`[autoSync] initial pull failed: ${e instanceof Error ? e.message : e}`);
   }
 
   // Stream remote INSERT/UPDATE for this user's rows into Dexie.

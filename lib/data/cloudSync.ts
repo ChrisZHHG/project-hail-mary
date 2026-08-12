@@ -18,6 +18,7 @@ import { repo, ALL_TABLES } from "./repository";
 const CONFLICT: Record<string, string> = {
   exerciseGear: "user_id,exerciseId",
   planOverrides: "user_id,workoutExerciseId",
+  planPublications: "user_id,workoutId",
 };
 
 /**

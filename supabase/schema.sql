@@ -190,6 +190,42 @@ create table if not exists public."planOverrides" (
   primary key (user_id, "workoutExerciseId")
 );
 
+-- ---------- planPublications (added Aug 2026 — the coach's sign-off) ----------
+-- ⚠️ This table was missing while the app already had it locally (Dexie v13) and
+-- listed it in ALL_TABLES. The consequence was not cosmetic: `startAutoSync` runs
+-- `await pushToCloud(); await pullFromCloud();`, and `pushToCloud` aggregates
+-- per-table failures and THROWS at the end — so the pull on the next line never
+-- ran. Because an empty table is skipped, the breakage began the first time a
+-- coach pressed Send and created a row here, and was permanent for that account
+-- from then on. Keyed by the workout it signs off.
+create table if not exists public."planPublications" (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  "workoutId" text not null,
+  "publishedAt" bigint not null,
+  by text not null,
+  note text,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, "workoutId")
+);
+
+do $$
+begin
+  execute 'alter table public."planPublications" enable row level security';
+  execute 'drop policy if exists "own rows" on public."planPublications"';
+  execute 'create policy "own rows" on public."planPublications" for all to authenticated
+             using (user_id = auth.uid()) with check (user_id = auth.uid())';
+  execute 'grant select, insert, update, delete on public."planPublications" to authenticated';
+  execute 'drop trigger if exists touch_updated_at on public."planPublications"';
+  execute 'create trigger touch_updated_at before update on public."planPublications"
+             for each row execute function public.touch_updated_at()';
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'planPublications'
+  ) then
+    execute 'alter publication supabase_realtime add table public."planPublications"';
+  end if;
+end $$;
+
 do $$
 begin
   execute 'alter table public."planOverrides" enable row level security';
