@@ -33,9 +33,17 @@ interface Backup {
   };
 }
 
+/** Empty stand-in so the suite can still be *collected* without a backup file.
+ *  `describe.skipIf` skips the tests, but Vitest still runs this factory to find
+ *  them — so reading the file unconditionally here crashed the whole run on any
+ *  machine that isn't the owner's (and in CI). */
+const EMPTY: Backup = {
+  tables: { exercises: [], workouts: [], workoutExercises: [], sessions: [], setLogs: [] },
+};
+
 describe.skipIf(!has)("coach engine — replay over real history", () => {
-  writeFileSync(REPORT, "");
-  const b = JSON.parse(readFileSync(BACKUP, "utf8")) as Backup;
+  if (has) writeFileSync(REPORT, "");
+  const b = has ? (JSON.parse(readFileSync(BACKUP, "utf8")) as Backup) : EMPTY;
   const { exercises, workouts, workoutExercises, sessions, setLogs } = b.tables;
   const exById = new Map(exercises.map((e) => [e.id, e]));
   const weById = new Map(workoutExercises.map((w) => [w.id, w]));
