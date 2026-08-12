@@ -1,4 +1,5 @@
 import type { SetLog, WorkoutExercise } from "../data/types";
+import { indexAssignments, resolveExerciseId } from "../data/resolve";
 import { loadingKind, topSet, type LoadingKind } from "./progression";
 
 /**
@@ -34,14 +35,13 @@ export interface HistoryInput {
 export function recentTopSets(input: HistoryInput & { limit?: number }): SetLog[] {
   const { exerciseId, setLogs, workoutExercises, sessionDates, excludeSessionId } = input;
   const limit = input.limit ?? 5;
-  const weToExercise = new Map(workoutExercises.map((w) => [w.id, w.exerciseId]));
+  const byAssignment = indexAssignments(workoutExercises);
 
   const bySession = new Map<string, SetLog[]>();
   for (const l of setLogs) {
     if (!l.done || l.sessionId === excludeSessionId) continue;
     if (l.weight == null && l.reps == null) continue;
-    const exId = l.exerciseId ?? (l.workoutExerciseId ? weToExercise.get(l.workoutExerciseId) : undefined);
-    if (exId !== exerciseId) continue;
+    if (resolveExerciseId(l, byAssignment) !== exerciseId) continue;
     bySession.set(l.sessionId, [...(bySession.get(l.sessionId) ?? []), l]);
   }
 
@@ -88,13 +88,12 @@ export function stallLength(series: SetLog[]): number {
 
 export function lastSessionSetsFor(input: HistoryInput): SetLog[] {
   const { exerciseId, setLogs, workoutExercises, sessionDates, excludeSessionId } = input;
-  const weToExercise = new Map(workoutExercises.map((w) => [w.id, w.exerciseId]));
+  const byAssignment = indexAssignments(workoutExercises);
 
   const mine = setLogs.filter((l) => {
     if (!l.done || l.sessionId === excludeSessionId) return false;
     if (l.weight == null && l.reps == null) return false;
-    const exId = l.exerciseId ?? (l.workoutExerciseId ? weToExercise.get(l.workoutExerciseId) : undefined);
-    return exId === exerciseId;
+    return resolveExerciseId(l, byAssignment) === exerciseId;
   });
   if (mine.length === 0) return [];
 

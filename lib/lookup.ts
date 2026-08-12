@@ -1,4 +1,5 @@
 import type { Exercise, SetLog, WorkoutExercise } from "./data/types";
+import { indexAssignments, resolveExerciseId } from "./data/resolve";
 
 /** "What did I do last time on this machine?" — aggregates history per
  *  exercise (across every workout it appears in: the same leg curl spans
@@ -35,14 +36,11 @@ export function buildExerciseMemory(
   logs: SetLog[],
   sessionDates: Map<string, string> // sessionId → date
 ): ExerciseMemory[] {
-  const weToExercise = new Map(wexs.map((w) => [w.id, w.exerciseId]));
+  const byAssignment = indexAssignments(wexs);
   const byExercise = new Map<string, SetLog[]>();
   for (const log of logs) {
     if (!log.done || (log.weight == null && log.reps == null)) continue;
-    // Program-assigned sets resolve via the assignment; freestyle/reconstructed
-    // sets carry the exercise directly.
-    const exId =
-      (log.workoutExerciseId && weToExercise.get(log.workoutExerciseId)) || log.exerciseId;
+    const exId = resolveExerciseId(log, byAssignment);
     if (!exId) continue;
     const arr = byExercise.get(exId);
     if (arr) arr.push(log);

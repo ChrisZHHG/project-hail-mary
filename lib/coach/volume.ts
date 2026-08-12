@@ -1,4 +1,5 @@
 import type { Exercise, SetLog, WorkoutExercise } from "../data/types";
+import { indexAssignments, resolveExerciseId } from "../data/resolve";
 
 /**
  * Weekly hard-set count per muscle — the most evidence-backed training variable,
@@ -59,10 +60,10 @@ export interface VolumeInput {
 export function weeklyMuscleVolume(input: VolumeInput): MuscleVolume[] {
   const { exercises, workoutExercises, setLogs, sessionDates, weekStart, today } = input;
   const exById = new Map(exercises.map((e) => [e.id, e]));
-  const weById = new Map(workoutExercises.map((w) => [w.id, w]));
+  const byAssignment = indexAssignments(workoutExercises);
 
   const muscleOf = (l: SetLog): string | undefined => {
-    const exId = l.exerciseId ?? (l.workoutExerciseId ? weById.get(l.workoutExerciseId)?.exerciseId : undefined);
+    const exId = resolveExerciseId(l, byAssignment);
     return exId ? exById.get(exId)?.targetMuscle : undefined;
   };
 

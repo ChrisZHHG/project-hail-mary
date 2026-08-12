@@ -9,6 +9,7 @@ import {
   useWorkouts,
 } from "@/lib/data/hooks";
 import { setVolume, sessionTonnageLbs } from "@/lib/volume";
+import { indexAssignments, resolveExerciseId } from "@/lib/data/resolve";
 import VolumeTrend, { type TrendPoint } from "@/components/VolumeTrend";
 import MuscleLoad from "@/components/MuscleLoad";
 import BodyHeatmap from "@/components/BodyHeatmap";
@@ -63,19 +64,13 @@ export default function ProgressPage() {
 
   const exById = new Map(exercises.map((e) => [e.id, e]));
   const woById = new Map(workouts.map((w) => [w.id, w]));
-  const weToMuscle = new Map<string, string>();
-  wexs.forEach((we) => {
-    const ex = exById.get(we.exerciseId);
-    if (ex) weToMuscle.set(we.id, ex.targetMuscle);
-  });
+  const byAssignment = indexAssignments(wexs);
   const muscleTotals = new Map<string, number>();
   logs.forEach((l) => {
     const v = setVolume(l);
     if (v > 0) {
-      const m =
-        (l.workoutExerciseId && weToMuscle.get(l.workoutExerciseId)) ||
-        (l.exerciseId && exById.get(l.exerciseId)?.targetMuscle) ||
-        "Other";
+      const exId = resolveExerciseId(l, byAssignment);
+      const m = (exId && exById.get(exId)?.targetMuscle) || "Other";
       muscleTotals.set(m, (muscleTotals.get(m) ?? 0) + v);
     }
   });
