@@ -42,6 +42,11 @@ export interface Program {
    * program the lifter is on.
    */
   activatedAt?: number;
+  /**
+   * When this was archived, i.e. "deleted" in the UI. See the note on
+   * `Workout.archivedAt` for why nothing here is ever really deleted.
+   */
+  archivedAt?: number;
 }
 
 export interface Workout {
@@ -55,6 +60,23 @@ export interface Workout {
    *  reminder and the 24h auto-publish deadline. Undefined = unscheduled, which
    *  is a valid state: the rotation still advances, there's just no clock on it. */
   scheduledDow?: number;
+  /**
+   * When this was archived. "Delete" in the UI archives rather than removes,
+   * for three separate reasons — any one of them sufficient:
+   *
+   *  1. A hard delete does not currently work. `lib/data/autoSync.ts` registers
+   *     `creating` and `updating` Dexie hooks but no `deleting` one, so a local
+   *     delete is invisible to the sync layer and the cloud row survives; the
+   *     inbound side drops DELETE events too. The next startup pull puts the row
+   *     straight back. An archive is an UPDATE, which syncs today.
+   *  2. `Session.workoutId` points here, and the progress page names historical
+   *     sessions from it. Removing the row leaves that history anonymous.
+   *  3. Ids are never reused, so an archived day can't collide with a stale
+   *     `planPublications` row and silently publish a plan nobody signed off.
+   *
+   * A real delete becomes possible once delete-sync (tombstones) exists.
+   */
+  archivedAt?: number;
 }
 
 export interface WorkoutExercise {
@@ -73,6 +95,10 @@ export interface WorkoutExercise {
   /** Cardio prescription text, e.g. "Zone 2 Cardio". */
   cardioSpec?: string;
   optional?: boolean;
+  /** When this was archived — see `Workout.archivedAt`. Archived assignments
+   *  drop out of the session and out of planned volume, but stay readable so
+   *  the sets logged against them keep resolving. */
+  archivedAt?: number;
 }
 
 export interface Session {

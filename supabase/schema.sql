@@ -197,6 +197,12 @@ create table if not exists public."planOverrides" (
 -- added after the first run need their own ALTER.
 alter table public.workouts add column if not exists "scheduledDow" integer;
 alter table public.programs add column if not exists "activatedAt" bigint;
+-- "Delete" archives rather than removes: autoSync has no `deleting` hook and
+-- drops inbound DELETE events, so a real delete never reaches here and the row
+-- would come back on the next pull. An archive is an ordinary UPDATE.
+alter table public.programs add column if not exists "archivedAt" bigint;
+alter table public.workouts add column if not exists "archivedAt" bigint;
+alter table public."workoutExercises" add column if not exists "archivedAt" bigint;
 
 -- ---------- planPublications (added Aug 2026 — the coach's sign-off) ----------
 -- ⚠️ This table was missing while the app already had it locally (Dexie v13) and

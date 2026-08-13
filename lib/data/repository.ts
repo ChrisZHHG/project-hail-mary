@@ -44,10 +44,55 @@ export const isWeekend = (d = new Date()) => d.getDay() === 0 || d.getDay() === 
  */
 export interface Repository {
   /* ---- catalog / program (all-table reads back the reactive hooks) ---- */
+  /** Every program, archived ones included — the program list offers to restore. */
   getPrograms(): Promise<Program[]>;
-  /** The program with the greatest `activatedAt` (newest `createdAt` breaks
-   *  ties), or undefined when there are no programs at all. */
+  /** The unarchived program with the greatest `activatedAt` (newest `createdAt`
+   *  breaks ties), or undefined when there is no unarchived program. */
   getActiveProgram(): Promise<Program | undefined>;
+
+  /* ---- authoring ----
+   * "Delete" archives; see `Workout.archivedAt` for why. Every multi-row write
+   * below runs in one `db.transaction("rw", …)` — a half-archived program is a
+   * worse state than either end of the operation. */
+
+  createProgram(name: string): Promise<Program>;
+  updateProgram(programId: string, patch: { name?: string }): Promise<void>;
+  /** Archive a program and everything under it. If it was active, the next most
+   *  recently activated unarchived program takes over. */
+  archiveProgram(programId: string): Promise<void>;
+  /** Un-archive a program (and its days/assignments) and make it active again. */
+  restoreProgram(programId: string): Promise<void>;
+  /** Deep-copy a program under fresh ids — the "new block" / "new client" move.
+   *  Copies structure only; no session or set history comes with it. */
+  duplicateProgram(programId: string, name?: string): Promise<Program>;
+
+  createWorkout(
+    programId: string,
+    input: { name: string; subtitle?: string; scheduledDow?: number }
+  ): Promise<Workout>;
+  updateWorkout(
+    workoutId: string,
+    patch: Partial<Pick<Workout, "name" | "subtitle" | "scheduledDow">>
+  ): Promise<void>;
+  /** Archive a day and its assignments, and drop any sign-off it carried. */
+  archiveWorkout(workoutId: string): Promise<void>;
+  reorderWorkouts(programId: string, orderedIds: string[]): Promise<void>;
+
+  addAssignment(
+    workoutId: string,
+    input: Omit<WorkoutExercise, "id" | "workoutId" | "order" | "archivedAt">
+  ): Promise<WorkoutExercise>;
+  /** `exerciseId` is deliberately not patchable: retargeting an assignment in
+   *  place would leave one row meaning different movements at different times.
+   *  Swapping a movement is archive-then-add. */
+  updateAssignment(
+    assignmentId: string,
+    patch: Partial<
+      Omit<WorkoutExercise, "id" | "workoutId" | "exerciseId" | "order" | "archivedAt">
+    >
+  ): Promise<void>;
+  archiveAssignment(assignmentId: string): Promise<void>;
+  reorderAssignments(workoutId: string, orderedIds: string[]): Promise<void>;
   /** Make a program the active one. */
   setActiveProgram(programId: string): Promise<void>;
   /** Days of the active program, in `dayOrder`. Empty when no program is active. */
@@ -154,6 +199,13 @@ export const ALL_TABLES = [
   "planPublications",
 ] as const;
 
+/** Drop the archive stamp rather than storing an explicit `undefined`. */
+function unarchive<T extends { archivedAt?: number }>(row: T): T {
+  const next = { ...row };
+  delete next.archivedAt;
+  return next;
+}
+
 class DexieRepository implements Repository {
   getPrograms() {
     return db.programs.toArray();
@@ -164,7 +216,7 @@ class DexieRepository implements Repository {
   }
 
   async getActiveProgram() {
-    const programs = await db.programs.toArray();
+    const programs = (await db.programs.toArray()).filter((p) => p.archivedAt == null);
     if (programs.length === 0) return undefined;
     // Greatest activatedAt wins. createdAt breaks ties and covers programs that
     // predate activation entirely — falling back to *a* program beats telling a
@@ -174,21 +226,205 @@ class DexieRepository implements Repository {
     )[0];
   }
 
+  /**
+   * An `activatedAt` strictly greater than every existing one.
+   *
+   * `Date.now()` alone isn't enough. Two activations inside the same
+   * millisecond tie, and `getActiveProgram`'s `createdAt` tiebreak can then hand
+   * the win to the other program — i.e. you activate one and a different one
+   * becomes active. Rare in a user's hands, immediate in a test, and wrong
+   * either way; making the stamp monotonic removes the dependency on clock
+   * resolution entirely.
+   */
+  private async nextActivation() {
+    const programs = await db.programs.toArray();
+    const max = programs.reduce((m, p) => Math.max(m, p.activatedAt ?? 0), 0);
+    return Math.max(Date.now(), max + 1);
+  }
+
   async setActiveProgram(programId: string) {
-    await db.programs.update(programId, { activatedAt: Date.now() });
+    await db.transaction("rw", db.programs, async () => {
+      await db.programs.update(programId, { activatedAt: await this.nextActivation() });
+    });
   }
 
   async getActiveWorkouts() {
     const active = await this.getActiveProgram();
-    return active ? this.getWorkouts(active.id) : [];
+    if (!active) return [];
+    const workouts = await this.getWorkouts(active.id);
+    return workouts.filter((w) => w.archivedAt == null);
   }
 
   async getActiveWorkoutExercises() {
     const workouts = await this.getActiveWorkouts();
     const ids = new Set(workouts.map((w) => w.id));
     const all = await db.workoutExercises.toArray();
-    return all.filter((w) => ids.has(w.workoutId));
+    return all.filter((w) => w.archivedAt == null && ids.has(w.workoutId));
   }
+
+  /* ---- authoring ---- */
+
+  async createProgram(name: string) {
+    const program: Program = { id: uid(), name, createdAt: Date.now(), activatedAt: 0 };
+    await db.transaction("rw", db.programs, async () => {
+      program.activatedAt = await this.nextActivation();
+      await db.programs.add(program);
+    });
+    return program;
+  }
+
+  async updateProgram(programId: string, patch: { name?: string }) {
+    await db.programs.update(programId, patch);
+  }
+
+  async archiveProgram(programId: string) {
+    const now = Date.now();
+    await db.transaction("rw", db.programs, db.workouts, db.workoutExercises, async () => {
+      const workouts = await db.workouts.where("programId").equals(programId).toArray();
+      const workoutIds = new Set(workouts.map((w) => w.id));
+      const assignments = (await db.workoutExercises.toArray()).filter((a) =>
+        workoutIds.has(a.workoutId)
+      );
+      await db.workoutExercises.bulkPut(assignments.map((a) => ({ ...a, archivedAt: now })));
+      await db.workouts.bulkPut(workouts.map((w) => ({ ...w, archivedAt: now })));
+      await db.programs.update(programId, { archivedAt: now });
+    });
+  }
+
+  async restoreProgram(programId: string) {
+    await db.transaction("rw", db.programs, db.workouts, db.workoutExercises, async () => {
+      const workouts = await db.workouts.where("programId").equals(programId).toArray();
+      const workoutIds = new Set(workouts.map((w) => w.id));
+      const assignments = (await db.workoutExercises.toArray()).filter((a) =>
+        workoutIds.has(a.workoutId)
+      );
+      await db.workoutExercises.bulkPut(assignments.map(unarchive));
+      await db.workouts.bulkPut(workouts.map(unarchive));
+      // Restoring is an explicit "I want this one back", so it also activates.
+      await db.programs.update(programId, {
+        archivedAt: undefined,
+        activatedAt: await this.nextActivation(),
+      });
+    });
+  }
+
+  async duplicateProgram(programId: string, name?: string) {
+    const copy: Program = { id: uid(), name: name ?? "", createdAt: Date.now(), activatedAt: 0 };
+    await db.transaction("rw", db.programs, db.workouts, db.workoutExercises, async () => {
+      const source = await db.programs.get(programId);
+      if (!source) throw new Error(`no such program: ${programId}`);
+      copy.name = name ?? `${source.name} (copy)`;
+      copy.activatedAt = await this.nextActivation();
+
+      const workouts = await db.workouts.where("programId").equals(programId).sortBy("dayOrder");
+      const live = workouts.filter((w) => w.archivedAt == null);
+      const byOldWorkoutId = new Map(live.map((w) => [w.id, uid()]));
+      const assignments = (await db.workoutExercises.toArray()).filter(
+        (a) => a.archivedAt == null && byOldWorkoutId.has(a.workoutId)
+      );
+
+      await db.programs.add(copy);
+      await db.workouts.bulkAdd(
+        live.map((w) => ({ ...w, id: byOldWorkoutId.get(w.id)!, programId: copy.id }))
+      );
+      // Fresh assignment ids, so not one existing SetLog points into the copy.
+      await db.workoutExercises.bulkAdd(
+        assignments.map((a) => ({ ...a, id: uid(), workoutId: byOldWorkoutId.get(a.workoutId)! }))
+      );
+    });
+    return copy;
+  }
+
+  async createWorkout(
+    programId: string,
+    input: { name: string; subtitle?: string; scheduledDow?: number }
+  ) {
+    const existing = await db.workouts.where("programId").equals(programId).toArray();
+    const dayOrder = existing.reduce((max, w) => Math.max(max, w.dayOrder + 1), 0);
+    const workout: Workout = { id: uid(), programId, dayOrder, ...input };
+    await db.workouts.add(workout);
+    return workout;
+  }
+
+  async updateWorkout(
+    workoutId: string,
+    patch: Partial<Pick<Workout, "name" | "subtitle" | "scheduledDow">>
+  ) {
+    await db.workouts.update(workoutId, patch);
+  }
+
+  async archiveWorkout(workoutId: string) {
+    const now = Date.now();
+    await db.transaction("rw", db.workouts, db.workoutExercises, db.planPublications, async () => {
+      const assignments = await db.workoutExercises.where("workoutId").equals(workoutId).toArray();
+      await db.workoutExercises.bulkPut(assignments.map((a) => ({ ...a, archivedAt: now })));
+      await db.workouts.update(workoutId, { archivedAt: now });
+      // A sign-off outlives the day it signed off. `draftState` checks for the
+      // publication row *before* it looks at any schedule, so leaving one behind
+      // would make a restored day's coach edits live without anyone sending them.
+      await db.planPublications.delete(workoutId);
+    });
+  }
+
+  async reorderWorkouts(programId: string, orderedIds: string[]) {
+    await db.transaction("rw", db.workouts, async () => {
+      const workouts = await db.workouts.where("programId").equals(programId).toArray();
+      const rank = new Map(orderedIds.map((id, i) => [id, i]));
+      // Anything the caller didn't mention keeps its relative position, after
+      // everything it did.
+      const ordered = [...workouts].sort(
+        (a, b) =>
+          (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity) || a.dayOrder - b.dayOrder
+      );
+      await db.workouts.bulkPut(ordered.map((w, i) => ({ ...w, dayOrder: i })));
+    });
+  }
+
+  async addAssignment(
+    workoutId: string,
+    input: Omit<WorkoutExercise, "id" | "workoutId" | "order" | "archivedAt">
+  ) {
+    const existing = await db.workoutExercises.where("workoutId").equals(workoutId).toArray();
+    const order = existing.reduce((max, a) => Math.max(max, Number(a.order) + 1 || 0), 0);
+    const assignment: WorkoutExercise = { ...input, id: uid(), workoutId, order };
+    await db.workoutExercises.add(assignment);
+    return assignment;
+  }
+
+  async updateAssignment(
+    assignmentId: string,
+    patch: Partial<
+      Omit<WorkoutExercise, "id" | "workoutId" | "exerciseId" | "order" | "archivedAt">
+    >
+  ) {
+    await db.workoutExercises.update(assignmentId, patch);
+  }
+
+  async archiveAssignment(assignmentId: string) {
+    // Left alone on purpose: any planOverride keyed by this id. Ids are never
+    // reused, so it can never match a future assignment — it is inert, and
+    // deleting it would be a second write for no behavioural difference.
+    await db.workoutExercises.update(assignmentId, { archivedAt: Date.now() });
+  }
+
+  async reorderAssignments(workoutId: string, orderedIds: string[]) {
+    await db.transaction("rw", db.workoutExercises, async () => {
+      const assignments = await db.workoutExercises.where("workoutId").equals(workoutId).toArray();
+      const rank = new Map(orderedIds.map((id, i) => [id, i]));
+      const ordered = [...assignments].sort(
+        (a, b) =>
+          (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity) ||
+          Number(a.order) - Number(b.order)
+      );
+      ordered.forEach((a, i) => (a.order = i));
+      // Belt and braces: the caller supplied the sequence, but the invariant that
+      // `order` is a unique number per workout is this layer's to keep.
+      normalizeAssignmentOrder(ordered);
+      await db.workoutExercises.bulkPut(ordered);
+    });
+  }
+
+  /* ---- reads ---- */
 
   getWorkout(workoutId: string) {
     return db.workouts.get(workoutId);
@@ -199,13 +435,16 @@ class DexieRepository implements Repository {
       .where("[workoutId+order]")
       .between([workoutId, Dexie.minKey], [workoutId, Dexie.maxKey])
       .toArray();
-    const exercises = await db.exercises.bulkGet(assignments.map((a) => a.exerciseId));
+    const live = assignments.filter((a) => a.archivedAt == null);
+    const exercises = await db.exercises.bulkGet(live.map((a) => a.exerciseId));
     // `bulkGet` returns undefined for a key it can't find, so the old
     // `exercises[i]!` was a lie: an assignment pointing at a deleted exercise
     // produced `exercise: undefined`, and ExecutionCard reads `exercise.category`
     // during render — a TypeError into the error boundary, taking the whole
     // session with it. Skip the orphan instead; the row stays in the database.
-    return assignments.flatMap((a, i) => {
+    // Iterate `live`, not `assignments` — `exercises` is indexed against `live`,
+    // so walking the unfiltered array pairs rows with the wrong exercise.
+    return live.flatMap((a, i) => {
       const exercise = exercises[i];
       return exercise ? [{ ...a, exercise }] : [];
     });
