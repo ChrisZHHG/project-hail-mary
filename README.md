@@ -4,9 +4,10 @@ An offline-first **strength & conditioning logger** PWA — a thumb-friendly rep
 for the Google-Sheet workout tracker. Built for the gym floor: sweaty fingers, big
 targets, smart defaults, zero spreadsheet pinch-zoom.
 
-> Repo codename **"Project Hail Mary."** The in-app display name is a placeholder
-> (`Hail Mary`) until Austin + Chris pick the final one — change it once in
-> [`lib/brand.ts`](lib/brand.ts).
+**🚀 [Live demo](https://projecthalimary.vercel.app)** — try it on mobile for the full experience.
+
+> **Note:** The display name and branding are still evolving. The app currently shows
+> "Hail Mary" as a placeholder. Branding constants live in [`lib/brand.ts`](lib/brand.ts).
 
 Built from the *Project Kinesis* architecture doc. Coaching content + seed program
 courtesy of **Austin Johansen** (BCRPA PT), used with consent.
@@ -65,3 +66,7 @@ Or import the GitHub repo at vercel.com/new (zero config — Next.js is detected
 
 Supabase sync + auth + coach/client roles · AI Q&A (RAG over the coach's theory docs) ·
 supplement-timing cards · Cal.com scheduling · HRV-based programming · sales/SaaS.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
